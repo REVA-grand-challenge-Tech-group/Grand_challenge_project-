@@ -5,12 +5,12 @@ import { useApp } from '../context/AppContext';
 const LanguageSelector = () => {
   const { setLanguage, t } = useApp();
   const navigate = useNavigate();
-  const [hovered, setHovered] = useState(null);
+  const [hoveredLang, setHoveredLang] = useState(null);
 
   const languages = [
-    { code: 'en', name: 'English', flag: '🇬🇧' },
-    { code: 'hi', name: 'हिन्दी', flag: '🇮🇳' },
-    { code: 'kn', name: 'ಕನ್ನಡ', flag: '🇮🇳' }
+    { code: 'en', name: 'English', flag: '🇬🇧', subtitle: 'English' },
+    { code: 'hi', name: 'हिन्दी', flag: '🇮🇳', subtitle: 'Hindi' },
+    { code: 'kn', name: 'ಕನ್ನಡ', flag: '🇮🇳', subtitle: 'Kannada' }
   ];
 
   const handleSelect = (code) => {
@@ -19,7 +19,7 @@ const LanguageSelector = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md animate-slide-up">
         <div className="text-center mb-8">
           <div className="relative inline-block">
@@ -29,7 +29,7 @@ const LanguageSelector = () => {
             </div>
           </div>
           <h1 className="text-4xl font-bold text-gray-800 mt-4 bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
-            {t('app_name')}
+            KrishiSetu
           </h1>
           <p className="text-gray-500 mt-2">{t('tagline')}</p>
         </div>
@@ -39,17 +39,20 @@ const LanguageSelector = () => {
             <button
               key={lang.code}
               onClick={() => handleSelect(lang.code)}
-              onMouseEnter={() => setHovered(lang.code)}
-              onMouseLeave={() => setHovered(null)}
+              onMouseEnter={() => setHoveredLang(lang.code)}
+              onMouseLeave={() => setHoveredLang(null)}
               className={`w-full group relative overflow-hidden rounded-2xl transition-all duration-300 ${
-                hovered === lang.code ? 'scale-105 shadow-2xl' : 'scale-100 shadow-lg'
+                hoveredLang === lang.code ? 'scale-105 shadow-2xl' : 'scale-100 shadow-lg'
               }`}
             >
               <div className="relative bg-white p-5 rounded-2xl border-2 border-green-100 group-hover:border-green-400 transition-all">
                 <div className="flex items-center">
                   <span className="text-4xl mr-4">{lang.flag}</span>
                   <div className="flex-1 text-left">
-                    <div className="font-bold text-xl text-gray-800">{lang.name}</div>
+                    <div className="font-bold text-xl text-gray-800 group-hover:text-green-600 transition-colors">
+                      {lang.name}
+                    </div>
+                    <div className="text-sm text-gray-500">{lang.subtitle}</div>
                   </div>
                   <div className="w-10 h-10 rounded-full bg-green-100 group-hover:bg-green-500 flex items-center justify-center transition-all group-hover:translate-x-1">
                     <svg className="w-5 h-5 text-green-600 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

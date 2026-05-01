@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 
 const RoleSelector = () => {
   const { setRole, t } = useApp();
   const navigate = useNavigate();
-  const [hovered, setHovered] = useState(null);
 
   const roles = [
     { id: 'farmer', icon: '🌾', gradient: 'from-green-500 to-green-600' },
@@ -19,29 +18,20 @@ const RoleSelector = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md animate-slide-up">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
         <div className="text-center mb-8">
-          <div className="relative inline-block">
-            <div className="absolute inset-0 bg-green-500 rounded-2xl blur-xl opacity-30 animate-pulse"></div>
-            <div className="relative inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg">
-              <span className="text-4xl">👋</span>
-            </div>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-800 mt-4">{t('welcome')}</h1>
+          <div className="text-5xl mb-3">👋</div>
+          <h1 className="text-2xl font-bold text-gray-800">{t('welcome')}</h1>
           <p className="text-gray-500 mt-2">{t('select_role')}</p>
         </div>
-
+        
         <div className="space-y-4">
           {roles.map((role) => (
             <button
               key={role.id}
               onClick={() => handleSelect(role.id)}
-              onMouseEnter={() => setHovered(role.id)}
-              onMouseLeave={() => setHovered(null)}
-              className={`w-full p-5 bg-white rounded-2xl border-2 border-gray-100 transition-all duration-300 group text-left shadow-sm hover:shadow-xl transform ${
-                hovered === role.id ? 'scale-[1.02]' : 'scale-100'
-              }`}
+              className="w-full p-5 bg-white rounded-2xl border-2 border-gray-100 hover:border-green-500 hover:bg-green-50 transition-all group text-left"
             >
               <div className="flex items-center">
                 <div className={`w-14 h-14 bg-gradient-to-r ${role.gradient} rounded-xl flex items-center justify-center text-2xl shadow-md group-hover:scale-110 transition-transform`}>

@@ -8,7 +8,6 @@ const EmergencyButton = () => {
     { name: '🚑 Ambulance', number: '102', color: 'bg-red-500' },
     { name: '🔥 Fire', number: '101', color: 'bg-orange-600' },
     { name: '🌾 Kisan Call Center', number: '1800-180-1551', color: 'bg-green-600' },
-    { name: '📞 Krishi Setu Support', number: '1800-123-4567', color: 'bg-blue-600' },
   ];
 
   const handleCall = (number) => {

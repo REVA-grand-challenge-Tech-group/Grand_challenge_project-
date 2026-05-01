@@ -1,0 +1,36 @@
+### Test POST - Create a new job
+POST http://localhost:5001/api/jobs/post
+Content-Type: application/json
+
+{
+  "farmerId": "farmer_001",
+  "farmerName": "Demo Farmer",
+  "farmerPhone": "9876543210",
+  "farmerDistrict": "Hassan",
+  "crop": "Rice",
+  "workType": "Harvesting",
+  "labourersNeeded": 5,
+  "wagePerDay": 400,
+  "hoursPerDay": 8,
+  "startDate": "2025-01-15",
+  "endDate": "2025-01-20",
+  "totalDays": 6,
+  "mealProvided": true,
+  "toolsProvided": true,
+  "location": "Hassan, Karnataka"
+}
+
+### Test GET - Get all open jobs
+GET http://localhost:5001/api/jobs/open
+
+### Test POST - Apply for a job
+POST http://localhost:5001/api/jobs/apply
+Content-Type: application/json
+
+{
+  "jobId": "PASTE_JOB_ID_HERE",
+  "labourerId": "labourer_001",
+  "labourerName": "Demo Labourer",
+  "labourerPhone": "9876543211",
+  "labourerType": "smartphone"
+}
