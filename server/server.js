@@ -10,6 +10,8 @@ dotenv.config();
 const connectDB = require('./config/db');
 connectDB();
 
+require('./services/marketAnalysis');
+
 const app = express();
 
 // Middleware
