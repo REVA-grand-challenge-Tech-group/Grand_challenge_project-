@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
 
 const LabourSupport = () => {
+  const { t } = useApp();
   const [search, setSearch] = useState('');
   const [applied, setApplied] = useState({});
   
