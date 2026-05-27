@@ -1,91 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AppProvider } from './context/AppContext';
-import { AuthProvider } from './context/AuthContext';
-import { Toaster } from 'react-hot-toast';
+import Navbar from './components/Navbar'; 
 
-import LanguageSelector from './components/LanguageSelector';
-import RoleSelector from './components/RoleSelector';
-import LoginForm from './components/LoginForm';
-import Dashboard from './pages/Dashboard';
-import MarketPrediction from './pages/MarketPrediction';
-import LabourSupport from './pages/LabourSupport';
-import Chat from './pages/Chat';
-import PostJob from './pages/PostJob';
-import FindJobs from './pages/FindJobs';
-import MyJobs from './pages/MyJobs';
-import MyApplications from './pages/MyApplications';
-import EmergencyButton from './components/EmergencyButton';
-
-const ProtectedRoute = ({ children }) => {
-  const user = localStorage.getItem('user');
-  const language = localStorage.getItem('language');
-  const role = localStorage.getItem('role');
-  
-  if (!language) return <Navigate to="/" replace />;
-  if (!role) return <Navigate to="/role" replace />;
-  if (!user) return <Navigate to="/login" replace />;
-  
-  return children;
-};
+import LanguagePage from './pages/LanguagePage'; 
+import RolePage from './pages/RolePage'; 
+import LoginPage from './pages/LoginPage'; 
+import DashboardPage from './pages/DashboardPage'; 
+import MarketPrediction from './pages/MarketPrediction.jsx';
 
 function App() {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-
-  useEffect(() => {
-    // Update online status when network changes
-    const handleOnline = () => {
-      console.log('🟢 Back online');
-      setIsOnline(true);
-    };
-    
-    const handleOffline = () => {
-      console.log('🔴 Offline');
-      setIsOnline(false);
-    };
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    // Check on mount
-    setIsOnline(navigator.onLine);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
   return (
     <Router>
-      <AppProvider>
-        <AuthProvider>
-          <Toaster position="top-center" />
-          
-          {/* Offline Banner */}
-          {!isOnline && (
-            <div className="fixed top-0 left-0 right-0 bg-yellow-500 text-white text-center py-2 text-sm z-50 shadow-md">
-              📴 You are offline. Some features may be limited. Connect to internet for live data.
-            </div>
-          )}
-          
-          <Routes>
-            <Route path="/" element={<LanguageSelector />} />
-            <Route path="/role" element={<RoleSelector />} />
-            <Route path="/login" element={<LoginForm />} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/market-prediction" element={<ProtectedRoute><MarketPrediction /></ProtectedRoute>} />
-            <Route path="/labour-support" element={<ProtectedRoute><LabourSupport /></ProtectedRoute>} />
-            <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-            <Route path="/post-job" element={<ProtectedRoute><PostJob /></ProtectedRoute>} />
-            <Route path="/find-jobs" element={<ProtectedRoute><FindJobs /></ProtectedRoute>} />
-            <Route path="/my-jobs" element={<ProtectedRoute><MyJobs /></ProtectedRoute>} />
-            <Route path="/my-applications" element={<ProtectedRoute><MyApplications /></ProtectedRoute>} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-          <EmergencyButton />
-        </AuthProvider>
-      </AppProvider>
+      {/* Persistent Navigation Layer */}
+      <Navbar /> 
+      
+      <main className="min-h-screen bg-slate-950 text-slate-100">
+        <Routes>
+          {/* STEP 1: Core Localization Channel */}
+          <Route path="/" element={<LanguagePage />} />
+
+          {/* STEP 2: Persona Matching */}
+          <Route path="/role" element={<RolePage />} />
+          <Route path="/select-role" element={<RolePage />} />
+
+          {/* STEP 3: Auth Channel */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<LoginPage />} />
+
+          {/* STEP 4: Central Operational Dashboard Matrix */}
+          <Route path="/dashboard" element={<DashboardPage />} />
+
+          {/* STEP 5: Market Prediction Module */}
+          <Route path="/market-prediction" element={<MarketPrediction />} />
+
+          {/* Fallback Redirection Sequence Route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
     </Router>
   );
 }

@@ -3,20 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-    <meta name="theme-color" content="#22c55e" />
-    <title>KrishiSetu - Farmer Support</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KrishiSetu - Farmer Support Platform</title>
     <style>
-      /* Makes it feel like a real app on phone */
-      body {
-        margin: 0;
-        padding: 0;
-        background: #f5f5f5;
-      }
+      /* Hide Google Translate banner */
+      .goog-te-banner-frame.skiptranslate { display: none !important; }
+      body { top: 0px !important; }
+      .goog-te-gadget { font-size: 0px !important; }
     </style>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <!-- Google Translate -->
+    <script type="text/javascript">
+      function googleTranslateElementInit() {
+        new google.translate.TranslateElement({
+          pageLanguage: 'en',
+          includedLanguages: 'en,hi,kn,ta,te,ml,bn,mr',
+          layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+        }, 'google_translate_element');
+      }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
   </body>
 </html>

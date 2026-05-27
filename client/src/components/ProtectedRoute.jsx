@@ -1,24 +1,15 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useApp } from '../context/AppContext';
+import { AuthContext } from '../context/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
-  const { user } = useAuth();
-  const { language, role } = useApp();
+  const { user } = useContext(AuthContext) || {};
+  const backupUser = localStorage.getItem('user');
 
-  if (!user) {
+  // If no user object exists in memory or localStorage, bounce them to Step 1
+  if (!user && !backupUser) {
     return <Navigate to="/" replace />;
   }
-
-  if (!language) {
-    return <Navigate to="/language" replace />;
-  }
-
-  if (!role) {
-    return <Navigate to="/role" replace />;
-  }
-
   return children;
 };
 

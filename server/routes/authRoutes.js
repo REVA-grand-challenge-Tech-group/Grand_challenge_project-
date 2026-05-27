@@ -1,38 +1,70 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const router = express.Router();
-const User = require('../models/User');
 
-// Register/Login user
-router.post('/register', async (req, res) => {
+// Simple in-memory storage
+const users = [];
+
+// REGISTER/LOGIN - Just phone number and name
+router.post('/login', async (req, res) => {
   try {
-    const { name, phone, role } = req.body;
+    const { phoneNumber, fullName } = req.body;
     
-    let user = await User.findOne({ phone });
-    
-    if (!user) {
-      user = new User({ name, phone, role });
-      await user.save();
+    if (!phoneNumber || !/^\d{10}$/.test(phoneNumber)) {
+      return res.status(400).json({ error: 'Valid 10-digit phone number required' });
     }
     
-    res.json({ 
-      success: true, 
-      user: { id: user._id, name: user.name, phone: user.phone, role: user.role }
+    // Find or create user
+    let user = users.find(u => u.phoneNumber === phoneNumber);
+    
+    if (!user && fullName) {
+      // New user - create account
+      user = {
+        id: Date.now().toString(),
+        fullName: fullName,
+        phoneNumber: phoneNumber,
+        role: 'farmer',
+        createdAt: new Date()
+      };
+      users.push(user);
+    }
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found. Please register with name.' });
+    }
+    
+    const token = jwt.sign({ userId: user.id }, 'secret123', { expiresIn: '7d' });
+    
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        fullName: user.fullName,
+        phoneNumber: user.phoneNumber,
+        role: user.role
+      }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Get user by phone
-router.get('/user/:phone', async (req, res) => {
-  try {
-    const user = await User.findOne({ phone: req.params.phone });
-    if (!user) {
-      return res.json({ success: false, message: 'User not found' });
-    }
+// Update profile
+router.put('/profile', (req, res) => {
+  const { userId, fullName, bio, farmSize, state, district } = req.body;
+  const user = users.find(u => u.id === userId);
+  
+  if (user) {
+    if (fullName) user.fullName = fullName;
+    if (bio) user.bio = bio;
+    if (farmSize) user.farmSize = farmSize;
+    if (state) user.state = state;
+    if (district) user.district = district;
+    
     res.json({ success: true, user });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+  } else {
+    res.status(404).json({ error: 'User not found' });
   }
 });
 
