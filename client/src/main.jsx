@@ -1,16 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App.jsx';
-import { AuthProvider } from './context/AuthContext';
-import { LanguageProvider } from './context/LanguageContext';
-import './index.css'; // Make sure your Tailwind styles are being read!
+import App from './App';
+import { AppProvider } from './context/AppContext'; 
+import './index.css'; // Make sure you have your tailwind styles here
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <LanguageProvider>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </LanguageProvider>
+    <AppProvider> 
+      <App />
+    </AppProvider>
   </React.StrictMode>
 );

@@ -1,327 +1,304 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
+// src/pages/DashboardPage.jsx
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useApp } from '../context/AppContext';
 import { 
-  TrendingUp, Users, PlusCircle, CloudSun, MessageSquare, Sparkles, 
-  ChevronRight, RefreshCw, Layers, MapPin, Calendar, Activity, Info 
+  Menu, User, Bell, Sun, Cloud, Droplets, Wind,
+  TrendingUp, Briefcase, Users, MessageCircle, 
+  Sprout, Calendar, MapPin, LogOut, Leaf 
 } from 'lucide-react';
 
+// Import background images (you'll add these to assets folder)
+import farmBanner from '../assets/images/farm-banner.jpg';
+import weatherBg from '../assets/images/weather-bg.jpg';
+import marketBg from '../assets/images/market-bg.jpg';
+import labourBg from '../assets/images/labour-bg.jpg';
+import communityBg from '../assets/images/community-bg.jpg';
+import cropsBg from '../assets/images/crops-bg.jpg';
+import aiBg from '../assets/images/ai-bg.jpg';
+
 const DashboardPage = () => {
-  const { user } = useContext(AuthContext) || {};
-  
-  // Setup fallback handling if AuthContext is unpopulated or cold during boot
-  const activeUser = user || JSON.parse(localStorage.getItem('user')) || { name: 'Krishi Member', role: 'BOTH' };
-  
-  // Track current active dashboard viewing channel if registered as "BOTH"
-  const [currentView, setCurrentView] = useState('FARMER'); 
+  const { user, logout } = useAuth();
+  const { language } = useApp();
+  const navigate = useNavigate();
+  const [greeting, setGreeting] = useState('');
+  const [weather, setWeather] = useState(null);
+  const [aiInsight, setAiInsight] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  // Sync default initial views to state parameters parsed from session variables
   useEffect(() => {
-    if (activeUser.role === 'FARMER' || activeUser.role === 'LABOUR') {
-      setCurrentView(activeUser.role);
-    }
-  }, [activeUser.role]);
-
-  // Compute time-dependent greeting parameters cleanly
-  const [greeting, setGreeting] = useState('Welcome');
-  useEffect(() => {
-    const hours = new Date().getHours();
-    if (hours < 12) setGreeting('Good Morning');
-    else if (hours < 17) setGreeting('Good Afternoon');
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting('Good Morning');
+    else if (hour < 17) setGreeting('Good Afternoon');
     else setGreeting('Good Evening');
-  }, []);
+
+    setWeather({
+      temp: 28,
+      condition: 'Sunny',
+      humidity: 65,
+      wind: 12,
+      icon: '☀️',
+      forecast: { morning: 24, afternoon: 28, evening: 26 }
+    });
+
+    setAiInsight({
+      message: 'Rice prices expected to rise by 8-10% in your district this week',
+      crop: 'Rice',
+      action: 'Consider selling in the next 3-5 days'
+    });
+  }, [user]);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/language');
+  };
+
+  const features = [
+    { id: 1, name: 'Market Prediction', icon: TrendingUp, path: '/market-prediction', color: 'from-emerald-600/90 to-emerald-800/90', bgImage: marketBg, desc: 'Crop prices & trends' },
+    { id: 2, name: 'Post a Job', icon: Briefcase, path: '/post-job', color: 'from-blue-600/90 to-blue-800/90', bgImage: labourBg, desc: 'Hire labour nearby' },
+    { id: 3, name: 'Find Work', icon: Users, path: '/find-jobs', color: 'from-amber-600/90 to-amber-800/90', bgImage: labourBg, desc: 'Available jobs near you' },
+    { id: 4, name: 'Community', icon: MessageCircle, path: '/community-chat', color: 'from-purple-600/90 to-purple-800/90', bgImage: communityBg, desc: 'Chat with farmers' },
+    { id: 5, name: 'My Crops', icon: Sprout, path: '/market-prediction', color: 'from-green-600/90 to-green-800/90', bgImage: cropsBg, desc: 'Track registered crops' },
+    { id: 6, name: 'Labour Support', icon: Users, path: '/labour-support', color: 'from-orange-600/90 to-orange-800/90', bgImage: labourBg, desc: 'Find workers' },
+    { id: 7, name: 'Weather', icon: Cloud, path: '/weather', color: 'from-cyan-600/90 to-cyan-800/90', bgImage: weatherBg, desc: 'Farming forecast' },
+    { id: 8, name: 'Profile', icon: User, path: '/profile', color: 'from-gray-600/90 to-gray-800/90', bgImage: null, desc: 'Your account' }
+  ];
+
+  const marketSummary = [
+    { crop: '🌾 Rice', price: '₹2,450', trend: '+8%', demand: 'High' },
+    { crop: '🍅 Tomato', price: '₹1,850', trend: '+12%', demand: 'Very High' },
+    { crop: '🧅 Onion', price: '₹1,650', trend: '-2%', demand: 'Medium' }
+  ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-6 lg:p-8 space-y-6">
-      
-      {/* 1. HERO CONTEXT BANNER MODULE */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 border border-slate-800 p-6 shadow-xl">
-        <div className="absolute inset-0 opacity-10 bg-cover bg-center mix-blend-luminosity z-0" 
-             style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1625246333195-78d9c38ad451?auto=format&fit=crop&q=80&w=1000")' }} />
-        
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full w-max">
-              <Activity className="w-3 h-3" /> Live Operational Workspace
+    <div className="min-h-screen bg-stone-50">
+      {/* Hamburger Menu */}
+      {menuOpen && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setMenuOpen(false)} />
+          <div className="fixed left-0 top-0 h-full w-72 bg-white z-50 shadow-2xl overflow-y-auto">
+            <div className="relative h-32 bg-gradient-to-r from-emerald-700 to-emerald-600">
+              <div className="absolute inset-0 bg-black/20"></div>
+              <div className="relative p-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                    <User size={24} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-white">{user?.fullName || 'Farmer'}</p>
+                    <p className="text-xs text-emerald-100">{user?.district || 'Mandya'}, {user?.state || 'Karnataka'}</p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <h1 className="text-2xl md:text-3xl font-black text-white mt-3 tracking-tight">
-              {greeting}, {activeUser.name}
-            </h1>
-            <p className="text-xs font-medium text-slate-400 mt-1 max-w-xl">
-              KrishiSetu core system node operational. Location contextual diagnostics running smoothly for regional monitoring clusters.
-            </p>
+            <div className="py-4">
+              {features.map(feature => (
+                <Link
+                  key={feature.id}
+                  to={feature.path}
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center px-6 py-3 text-stone-700 hover:bg-emerald-50 transition"
+                >
+                  <feature.icon size={20} className="mr-3 text-emerald-600" />
+                  <span>{feature.name}</span>
+                </Link>
+              ))}
+              <button
+                onClick={handleLogout}
+                className="flex items-center w-full px-6 py-3 text-red-600 hover:bg-red-50 transition mt-4 border-t"
+              >
+                <LogOut size={20} className="mr-3" />
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Header with Farm Banner */}
+      <div 
+        className="relative bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.5)), url(${farmBanner})` }}
+      >
+        <div className="px-5 pt-12 pb-8 relative z-10">
+          {/* Top Bar */}
+          <div className="flex justify-between items-center mb-6">
+            <button onClick={() => setMenuOpen(true)} className="p-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition">
+              <Menu size={24} className="text-white" />
+            </button>
+            <div className="flex items-center space-x-2">
+              <button className="p-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition">
+                <Bell size={20} className="text-white" />
+              </button>
+              <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                <span className="text-sm font-bold text-white">{user?.fullName?.charAt(0) || 'R'}</span>
+              </div>
+            </div>
           </div>
 
-          {/* Conditional Layout Role-Toggle Switch Wrapper */}
-          {activeUser.role === 'BOTH' && (
-            <div className="bg-slate-950/80 p-1 rounded-xl border border-slate-800 flex items-center self-start md:self-center shadow-inner">
-              <button
-                onClick={() => setCurrentView('FARMER')}
-                className={`px-4 py-2 text-xs font-extrabold rounded-lg transition-all flex items-center gap-2 ${currentView === 'FARMER' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
-              >
-                <Layers className="w-3.5 h-3.5" />
-                <span>Farmer Engine</span>
-              </button>
-              <button
-                onClick={() => setCurrentView('LABOUR')}
-                className={`px-4 py-2 text-xs font-extrabold rounded-lg transition-all flex items-center gap-2 ${currentView === 'LABOUR' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
-              >
-                <Users className="w-3.5 h-3.5" />
-                <span>Labour Matrix</span>
-              </button>
+          {/* Greeting */}
+          <div>
+            <p className="text-emerald-100 text-sm">{greeting}</p>
+            <h1 className="text-3xl font-bold text-white mt-1">{user?.fullName?.split(' ')[0] || 'Farmer'}</h1>
+            <div className="flex items-center mt-2 text-emerald-100 text-sm">
+              <MapPin size={14} className="mr-1" />
+              <span>{user?.district || 'Mandya'}, {user?.state || 'Karnataka'}</span>
+            </div>
+          </div>
+
+          {/* Weather Card with Background */}
+          {weather && (
+            <div 
+              className="mt-6 rounded-2xl overflow-hidden relative"
+              style={{ backgroundImage: `url(${weatherBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+            >
+              <div className="bg-black/30 backdrop-blur-sm p-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-5xl">{weather.icon}</span>
+                    <div>
+                      <p className="text-3xl font-bold text-white">{weather.temp}°C</p>
+                      <p className="text-sm text-white/90">{weather.condition}</p>
+                    </div>
+                  </div>
+                  <div className="text-right text-white">
+                    <div className="flex items-center text-sm">
+                      <Droplets size={14} className="mr-1" />
+                      <span>{weather.humidity}%</span>
+                    </div>
+                    <div className="flex items-center text-sm mt-1">
+                      <Wind size={14} className="mr-1" />
+                      <span>{weather.wind} km/h</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-between mt-3 pt-3 border-t border-white/20 text-white/90 text-sm">
+                  <span>🌅 Morning {weather.forecast.morning}°</span>
+                  <span>☀️ Afternoon {weather.forecast.afternoon}°</span>
+                  <span>🌙 Evening {weather.forecast.evening}°</span>
+                </div>
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* 2. LIVE METRICS & INTEGRATED REAL-TIME TELEMETRY TRACKER GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
-        {/* Weather Monitoring Summary Card Module */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-          <div className="space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 block">Atmospheric Telemetry</span>
-            <span className="text-xl font-black text-white block">31°C / 64%</span>
-            <span className="text-[11px] font-bold text-emerald-400 block mt-0.5">Scattered Cover • Mysuru Region</span>
-          </div>
-          <div className="w-12 h-12 bg-sky-500/10 border border-sky-500/20 rounded-xl flex items-center justify-center text-sky-400">
-            <CloudSun className="w-5 h-5" />
-          </div>
-        </div>
-
-        {/* Dynamic Context Live Analytics Stats 1 */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-          <div className="space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 block">Market Index Flow</span>
-            <span className="text-xl font-black text-white block">₹7,450 / Qtl</span>
-            <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1 mt-0.5">
-              <TrendingUp className="w-3 h-3" /> +4.2% This Cycle
-            </span>
-          </div>
-          <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400">
-            <TrendingUp className="w-5 h-5" />
-          </div>
-        </div>
-
-        {/* Dynamic Context Live Analytics Stats 2 */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-          <div className="space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 block">Active Local Labor Index</span>
-            <span className="text-xl font-black text-white block">142 Openings</span>
-            <span className="text-[11px] font-bold text-teal-400 block mt-0.5">Within 15km Perimeter Radius</span>
-          </div>
-          <div className="w-12 h-12 bg-teal-500/10 border border-teal-500/20 rounded-xl flex items-center justify-center text-teal-400">
-            <Users className="w-5 h-5" />
-          </div>
-        </div>
-
-        {/* Dynamic Context Live Analytics Stats 3 */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-          <div className="space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 block">System Verification Status</span>
-            <span className="text-xl font-black text-emerald-400 block">Node Secured</span>
-            <span className="text-[11px] font-bold text-slate-400 block mt-0.5">ULCA Pipeline Connected</span>
-          </div>
-          <div className="w-12 h-12 bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center text-slate-400">
-            <RefreshCw className="w-4 h-4 animate-spin-slow" />
-          </div>
-        </div>
-
-      </div>
-
-      {/* 3. CORE AI INSIGHTS & CROP HARVEST STRATEGY RECOMMENDATIONS (GEMINI INTERFERENCE WRAPPERS) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Gemini Engine Real-time Analysis Card Block */}
-        <div className="lg:col-span-2 bg-gradient-to-br from-slate-900 to-slate-950 border border-emerald-500/20 rounded-3xl p-6 shadow-md relative group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl group-hover:bg-emerald-500/10 transition-all pointer-events-none" />
-          
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-900/30">
-                <Sparkles className="w-4 h-4" />
+      {/* Main Content */}
+      <div className="px-5 py-6 pb-24">
+        {/* AI Insight Card with Background */}
+        <div 
+          className="relative rounded-2xl overflow-hidden mb-6"
+          style={{ backgroundImage: `url(${aiBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+        >
+          <div className="bg-gradient-to-r from-emerald-900/80 to-green-800/80 backdrop-blur-sm p-4">
+            <div className="flex items-start space-x-3">
+              <div className="bg-white/20 backdrop-blur-sm p-2 rounded-xl">
+                <Leaf size={20} className="text-white" />
               </div>
               <div>
-                <h3 className="text-sm font-black text-white tracking-tight">Gemini LLM Real-Time Agricultural Assessment</h3>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Model Engine Pipeline: Contextual Inference Mode</p>
+                <p className="text-xs text-emerald-200 font-semibold">🌾 AI AGRICULTURE INSIGHT</p>
+                <p className="text-white font-medium mt-1">{aiInsight?.message}</p>
+                <p className="text-xs text-emerald-200 mt-2">💡 {aiInsight?.action}</p>
               </div>
-            </div>
-            <span className="text-[10px] font-extrabold bg-slate-800 border border-slate-700 text-slate-400 px-2 py-1 rounded-md">
-              2026 Season V2
-            </span>
-          </div>
-
-          <div className="space-y-4 text-xs font-semibold text-slate-300 leading-relaxed">
-            <p>
-              Based on spatial weather clusters parsed over Karnataka over the last 72 hours, precipitation indices match model patterns for optimal macro planting parameters. Soil temperature indices indicate a stable localized ecosystem loop.
-            </p>
-            <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 block">Automated Seasonal Recommendations:</span>
-              <ul className="list-disc list-inside space-y-1.5 text-slate-400">
-                <li>Prioritize root aeration grids ahead of projected rain events on Friday evening.</li>
-                <li>Optimize nitrogen fertilization ratios for cotton and ragi fields in local zones.</li>
-                <li>Projected market arbitrage trends show upward volume demand vectors for local cash crops next week.</li>
-              </ul>
             </div>
           </div>
         </div>
 
-        {/* Static Professional System Field Guideline Vector Module */}
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between shadow-sm">
-          <div>
-            <h3 className="text-sm font-black text-white tracking-tight mb-3">Verified Regional Farming Practices</h3>
-            <div className="space-y-3">
-              <div className="p-3 rounded-xl bg-slate-950/40 border border-slate-800/80">
-                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide block">Water Allocation Routine</span>
-                <p className="text-[11px] font-medium text-slate-400 mt-1">Drip automation metrics reduce evaporation deficits by roughly 35% compared to surface flooding loops.</p>
-              </div>
-              <div className="p-3 rounded-xl bg-slate-950/40 border border-slate-800/80">
-                <span className="text-[10px] font-bold text-teal-400 uppercase tracking-wide block">Pest Mitigation Protocol</span>
-                <p className="text-[11px] font-medium text-slate-400 mt-1">Early tracking arrays for fall armyworm metrics prevent deep crop damage sequences across fields.</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-slate-800 flex items-center gap-2">
-            <Info className="w-4 h-4 text-slate-500 shrink-0" />
-            <p className="text-[10px] font-semibold text-slate-500 leading-tight">
-              Methods checked and cross-verified via regional university extension nodes.
-            </p>
+        {/* Quick Feature Grid */}
+        <div className="mb-8">
+          <h2 className="text-lg font-bold text-stone-800 mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-4 gap-3">
+            {features.slice(0, 4).map((feature) => (
+              <Link key={feature.id} to={feature.path}>
+                <div className={`bg-gradient-to-br ${feature.color} rounded-2xl p-3 text-center hover:scale-105 transition shadow-lg relative overflow-hidden`}>
+                  {feature.bgImage && (
+                    <div 
+                      className="absolute inset-0 opacity-20 bg-cover bg-center"
+                      style={{ backgroundImage: `url(${feature.bgImage})` }}
+                    ></div>
+                  )}
+                  <div className="relative z-10">
+                    <div className="text-white flex justify-center mb-2">
+                      <feature.icon size={28} />
+                    </div>
+                    <p className="text-xs font-semibold text-white">{feature.name}</p>
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
 
+        {/* Market Summary Section */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold text-stone-800">Market Summary</h2>
+            <Link to="/market-prediction" className="text-emerald-600 text-sm font-medium">View All →</Link>
+          </div>
+          <div className="space-y-3">
+            {marketSummary.map((item, idx) => (
+              <div key={idx} className="bg-white rounded-xl p-4 flex justify-between items-center shadow-sm border border-stone-100">
+                <div>
+                  <p className="font-semibold text-stone-800">{item.crop}</p>
+                  <p className="text-xs text-stone-500">Demand: {item.demand}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-emerald-700">{item.price}</p>
+                  <p className={`text-xs ${item.trend.includes('+') ? 'text-green-600' : 'text-red-600'}`}>
+                    {item.trend}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* More Features Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          {features.slice(4, 8).map((feature) => (
+            <Link key={feature.id} to={feature.path}>
+              <div className={`bg-gradient-to-br ${feature.color} rounded-xl p-4 shadow-lg hover:shadow-xl transition relative overflow-hidden`}>
+                {feature.bgImage && (
+                  <div 
+                    className="absolute inset-0 opacity-20 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${feature.bgImage})` }}
+                  ></div>
+                )}
+                <div className="relative z-10">
+                  <div className="text-white mb-2">
+                    <feature.icon size={24} />
+                  </div>
+                  <p className="font-semibold text-white text-sm">{feature.name}</p>
+                  <p className="text-xs text-white/80 mt-1">{feature.desc}</p>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
 
-      {/* 4. DYNAMIC SUB-ROUTE FUNCTION MATRIX GENERATOR GRID */}
-      <div>
-        <div className="border-b border-slate-800 pb-3 mb-4">
-          <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">
-            Context Engine View Operations: {currentView === 'FARMER' ? 'FARMER COMMAND SUITE' : 'LABOUR WORKSPACE CONSOLE'}
-          </h2>
+      {/* Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-stone-200 shadow-lg">
+        <div className="flex justify-around py-2 max-w-md mx-auto">
+          <Link to="/dashboard" className="flex flex-col items-center py-2 px-6 text-emerald-600">
+            <Sprout size={22} />
+            <span className="text-xs mt-1">Home</span>
+          </Link>
+          <Link to="/market-prediction" className="flex flex-col items-center py-2 px-6 text-stone-400">
+            <TrendingUp size={22} />
+            <span className="text-xs mt-1">Market</span>
+          </Link>
+          <Link to="/community-chat" className="flex flex-col items-center py-2 px-6 text-stone-400">
+            <MessageCircle size={22} />
+            <span className="text-xs mt-1">Chat</span>
+          </Link>
+          <Link to="/profile" className="flex flex-col items-center py-2 px-6 text-stone-400">
+            <User size={22} />
+            <span className="text-xs mt-1">Profile</span>
+          </Link>
         </div>
-
-        {/* Conditional Engine Layout 1: Farmer Control Interface Components */}
-        {currentView === 'FARMER' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            
-            {/* Action Card 1: Market Prediction Matrix */}
-            <div className="bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all rounded-2xl p-5 shadow-sm group cursor-pointer">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-                <TrendingUp className="w-5 h-5" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-200">Market Prediction Engine</h4>
-              <p className="text-[11px] font-medium text-slate-500 mt-1.5 leading-relaxed">Analyze forward arbitrage pricing parameters and spatial demand index lines.</p>
-              <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-400 mt-4 group-hover:translate-x-1 transition-transform">
-                Initialize System Core <ChevronRight className="w-3.5 h-3.5" />
-              </div>
-            </div>
-
-            {/* Action Card 2: Labor Support Directory */}
-            <div className="bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all rounded-2xl p-5 shadow-sm group cursor-pointer">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-                <Users className="w-5 h-5" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-200">Labour Support Network</h4>
-              <p className="text-[11px] font-medium text-slate-500 mt-1.5 leading-relaxed">Track local operations rosters, availability, and handle profile screenings.</p>
-              <div className="flex items-center gap-1 text-[11px] font-bold text-blue-400 mt-4 group-hover:translate-x-1 transition-transform">
-                Open Personnel Grid <ChevronRight className="w-3.5 h-3.5" />
-              </div>
-            </div>
-
-            {/* Action Card 3: Post a Job Opening */}
-            <div className="bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all rounded-2xl p-5 shadow-sm group cursor-pointer">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-                <PlusCircle className="w-5 h-5" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-200">Post Operational Openings</h4>
-              <p className="text-[11px] font-medium text-slate-500 mt-1.5 leading-relaxed">Broadcast field wage structures and operational details out to local labor hubs.</p>
-              <div className="flex items-center gap-1 text-[11px] font-bold text-purple-400 mt-4 group-hover:translate-x-1 transition-transform">
-                Inject New Request <ChevronRight className="w-3.5 h-3.5" />
-              </div>
-            </div>
-
-            {/* Action Card 4: Weather Analytics Matrix */}
-            <div className="bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all rounded-2xl p-5 shadow-sm group cursor-pointer">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-                <CloudSun className="w-5 h-5" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-200">Advanced Climate Terminal</h4>
-              <p className="text-[11px] font-medium text-slate-500 mt-1.5 leading-relaxed">Review localized moisture radar, tracking indices, and seasonal models.</p>
-              <div className="flex items-center gap-1 text-[11px] font-bold text-amber-400 mt-4 group-hover:translate-x-1 transition-transform">
-                Launch Radar Array <ChevronRight className="w-3.5 h-3.5" />
-              </div>
-            </div>
-
-            {/* Action Card 5: Decentralized Community Chat Channels */}
-            <div className="bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all rounded-2xl p-5 shadow-sm group cursor-pointer">
-              <div className="w-10 h-10 rounded-xl bg-pink-500/10 text-pink-400 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-                <MessageSquare className="w-5 h-5" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-200">Community Exchange Rooms</h4>
-              <p className="text-[11px] font-medium text-slate-500 mt-1.5 leading-relaxed">Discuss trade pricing vectors, seed performance metrics, and equipment shares.</p>
-              <div className="flex items-center gap-1 text-[11px] font-bold text-pink-400 mt-4 group-hover:translate-x-1 transition-transform">
-                Connect Channel Feed <ChevronRight className="w-3.5 h-3.5" />
-              </div>
-            </div>
-
-          </div>
-        )}
-
-        {/* Conditional Engine Layout 2: Labor Control Interface Components */}
-        {currentView === 'LABOUR' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            
-            {/* Action Card 1: Find Active Work Contracts */}
-            <div className="bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all rounded-2xl p-5 shadow-sm group cursor-pointer">
-              <div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-                <Users className="w-5 h-5" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-200">Scan Active Job Listings</h4>
-              <p className="text-[11px] font-medium text-slate-500 mt-1.5 leading-relaxed">Filter verified regional crop harvests and transport contracts by wage parameters.</p>
-              <div className="flex items-center gap-1 text-[11px] font-bold text-teal-400 mt-4 group-hover:translate-x-1 transition-transform">
-                Query Active Orders <ChevronRight className="w-3.5 h-3.5" />
-              </div>
-            </div>
-
-            {/* Action Card 2: Track Active Applications */}
-            <div className="bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all rounded-2xl p-5 shadow-sm group cursor-pointer">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-                <PlusCircle className="w-5 h-5" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-200">Contract Submission Matrix</h4>
-              <p className="text-[11px] font-medium text-slate-500 mt-1.5 leading-relaxed">Check authorization review queues, wage approvals, and deployment schedules.</p>
-              <div className="flex items-center gap-1 text-[11px] font-bold text-cyan-400 mt-4 group-hover:translate-x-1 transition-transform">
-                Track Applications <ChevronRight className="w-3.5 h-3.5" />
-              </div>
-            </div>
-
-            {/* Action Card 3: Weather Analytics Module (Shared Data Mapping) */}
-            <div className="bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all rounded-2xl p-5 shadow-sm group cursor-pointer">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-                <CloudSun className="w-5 h-5" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-200">Field Weather Monitor</h4>
-              <p className="text-[11px] font-medium text-slate-500 mt-1.5 leading-relaxed">Verify daily operational weather stability forecasts prior to route deployment.</p>
-              <div className="flex items-center gap-1 text-[11px] font-bold text-amber-400 mt-4 group-hover:translate-x-1 transition-transform">
-                Launch Radar Array <ChevronRight className="w-3.5 h-3.5" />
-              </div>
-            </div>
-
-            {/* Action Card 4: Decentralized Community Chat (Shared Data Mapping) */}
-            <div className="bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all rounded-2xl p-5 shadow-sm group cursor-pointer">
-              <div className="w-10 h-10 rounded-xl bg-pink-500/10 text-pink-400 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-                <MessageSquare className="w-5 h-5" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-200">Labour Coordination Feeds</h4>
-              <p className="text-[11px] font-medium text-slate-500 mt-1.5 leading-relaxed">Coordinate transport networks, local wage trends, and share working conditions.</p>
-              <div className="flex items-center gap-1 text-[11px] font-bold text-pink-400 mt-4 group-hover:translate-x-1 transition-transform">
-                Connect Channel Feed <ChevronRight className="w-3.5 h-3.5" />
-              </div>
-            </div>
-
-          </div>
-        )}
       </div>
-
     </div>
   );
 };

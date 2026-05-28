@@ -1,376 +1,446 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  TrendingUp, TrendingDown, Calculator, Briefcase, 
-  Layers, AlertTriangle, ShieldX, LineChart, PlusCircle, CheckCircle2 
-} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, TrendingUp, DollarSign, Activity, Calculator, CheckCircle, X, Plus, FileText } from 'lucide-react';
 
 const MarketPrediction = () => {
-  // Extract user parameters setup in Step 2/3
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user')) || {
-    name: 'Thulasi',
-    role: 'FARMER', // Options: 'FARMER', 'BUYER', 'BOTH'
-    state: 'Karnataka',
-    district: 'Mysuru'
+  const navigate = useNavigate();
+  const [selectedCrop, setSelectedCrop] = useState(null);
+  const [showProfitModal, setShowProfitModal] = useState(false);
+  const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+  const [registeredCrops, setRegisteredCrops] = useState([]);
+  const [profitData, setProfitData] = useState({
+    landArea: '',
+    expectedYield: '',
+    totalCost: ''
+  });
+  const [registrationData, setRegistrationData] = useState({
+    area: '',
+    expectedHarvest: '',
+    plantingDate: ''
   });
 
-  const [marketData, setMarketData] = useState([]);
-  const [myRegistrations, setMyRegistrations] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  // Profit Calculator State Inputs
-  const [calcSelectedCrop, setCalcSelectedCrop] = useState('');
-  const [calcAcreage, setCalcAcreage] = useState('');
-  const [calcCost, setCalcCost] = useState('');
-  const [calculatedProfit, setCalculatedProfit] = useState(null);
-
-  // New Crop Registration Fields State
-  const [regCropName, setRegCropName] = useState('');
-  const [regAcreage, setRegAcreage] = useState('');
-  const [regYield, setRegYield] = useState('');
-  const [regDate, setRegDate] = useState('');
-  const [regSuccess, setRegSuccess] = useState(false);
-
-  // STRICT SECURITY ACCESS CHECK
-  const isFarmer = user?.role === 'FARMER' || user?.role === 'BOTH';
-
+  // Load registered crops from localStorage
   useEffect(() => {
-    if (!isFarmer) return;
+    const saved = localStorage.getItem('registeredCrops');
+    if (saved) {
+      setRegisteredCrops(JSON.parse(saved));
+    }
+  }, []);
 
-    // Simulate fetching stable backend predictions configured for the logged-in location context
-    setTimeout(() => {
-      const stablePredictions = [
-        {
-          cropName: 'Ragi (Finger Millet)',
-          currentPrice: 3400,
-          historicalPrices: [3100, 3200, 3350, 3400],
-          predictedPriceNextMonth: 3650,
-          demandLevel: 'HIGH',
-          riskFactor: 'LOW',
-          seasonalInsight: 'Pre-monsoon crop cycles indicate robust trading margins with high regional market pull.'
-        },
-        {
-          cropName: 'Paddy (Rice)',
-          currentPrice: 2180,
-          historicalPrices: [2100, 2150, 2160, 2180],
-          predictedPriceNextMonth: 2240,
-          demandLevel: 'MEDIUM',
-          riskFactor: 'MODERATE',
-          seasonalInsight: 'Supply volume arriving from neighboring channel segments will flatten price acceleration spikes.'
-        },
-        {
-          cropName: 'Maize',
-          currentPrice: 2250,
-          historicalPrices: [2400, 2350, 2300, 2250],
-          predictedPriceNextMonth: 2100,
-          demandLevel: 'LOW',
-          riskFactor: 'HIGH',
-          seasonalInsight: 'Elevated supply yields across local districts creates temporary price reduction flags.'
-        }
-      ];
+  const marketData = [
+    { 
+      id: 1,
+      name: '🌾 Rice', 
+      image: '🌾',
+      currentPrice: 2450, 
+      predictedPrice: 2600, 
+      trend: '+8%', 
+      demand: 'High', 
+      risk: 'Low',
+      confidence: 85,
+      season: 'Kharif',
+      recommendation: 'Good time to sell in next 2-3 weeks',
+      tip: 'High demand expected due to festival season'
+    },
+    { 
+      id: 2,
+      name: '🍅 Tomato', 
+      image: '🍅',
+      currentPrice: 1850, 
+      predictedPrice: 2100, 
+      trend: '+12%', 
+      demand: 'Very High', 
+      risk: 'Medium',
+      confidence: 90,
+      season: 'Rabi',
+      recommendation: 'Best time to harvest and sell',
+      tip: 'Prices expected to peak next week'
+    },
+    { 
+      id: 3,
+      name: '🧅 Onion', 
+      image: '🧅',
+      currentPrice: 1650, 
+      predictedPrice: 1600, 
+      trend: '-2%', 
+      demand: 'Medium', 
+      risk: 'High',
+      confidence: 75,
+      season: 'Rabi',
+      recommendation: 'Wait for prices to stabilize',
+      tip: 'Store for 2-3 weeks for better price'
+    },
+    { 
+      id: 4,
+      name: '🌾 Wheat', 
+      image: '🌾',
+      currentPrice: 2250, 
+      predictedPrice: 2350, 
+      trend: '+5%', 
+      demand: 'High', 
+      risk: 'Low',
+      confidence: 82,
+      season: 'Rabi',
+      recommendation: 'Hold for 1 week',
+      tip: 'Government procurement starting soon'
+    },
+    { 
+      id: 5,
+      name: '🥔 Potato', 
+      image: '🥔',
+      currentPrice: 1450, 
+      predictedPrice: 1500, 
+      trend: '+3%', 
+      demand: 'Medium', 
+      risk: 'Low',
+      confidence: 78,
+      season: 'Kharif',
+      recommendation: 'Sell in local market',
+      tip: 'Cold storage rates are good this month'
+    }
+  ];
 
-      setMarketData(stablePredictions);
-      setCalcSelectedCrop(stablePredictions[0]?.cropName || '');
-      setLoading(false);
-    }, 800);
-  }, [isFarmer]);
-
-  // LIVE INLINE PROFIT CALCULATOR MATRICES
-  const executeProfitCalculation = (e) => {
-    e.preventDefault();
-    const targetedCrop = marketData.find(c => c.cropName === calcSelectedCrop);
-    if (!targetedCrop) return;
-
-    // Multipliers: Assume avg 15 quintals yield per acre base line
-    const averageYieldPerAcre = 15; 
-    const totalEstimatedYield = parseFloat(calcAcreage) * averageYieldPerAcre;
-    const grossRevenue = totalEstimatedYield * targetedCrop.predictedPriceNextMonth;
-    const netProfit = grossRevenue - parseFloat(calcCost);
-
-    setCalculatedProfit({
-      yieldTotal: totalEstimatedYield,
-      revenue: grossRevenue,
-      profit: netProfit
-    });
-  };
-
-  // ADD NEW PRODUCTION REGISTRATION TO LEDGER
-  const handleRegisterCrop = (e) => {
-    e.preventDefault();
-    if (!regCropName || !regAcreage || !regYield) return;
-
-    const newLog = {
-      id: Date.now(),
-      cropName: regCropName,
-      acreage: regAcreage,
-      estimatedYield: regYield,
-      expectedHarvestDate: regDate || '2026-09-15',
-      timestamp: new Date().toLocaleDateString()
+  const calculateProfit = (crop) => {
+    const area = parseFloat(profitData.landArea);
+    const yieldPerAcre = parseFloat(profitData.expectedYield);
+    const cost = parseFloat(profitData.totalCost);
+    
+    if (!area || !yieldPerAcre) return null;
+    
+    const totalYield = area * yieldPerAcre;
+    const revenue = totalYield * crop.currentPrice;
+    const netProfit = revenue - (cost || 0);
+    const profitPerAcre = netProfit / area;
+    
+    return {
+      totalYield,
+      revenue,
+      netProfit,
+      profitPerAcre
     };
-
-    setMyRegistrations([newLog, ...myRegistrations]);
-    setRegSuccess(true);
-    
-    // Clear registration controls
-    setRegCropName('');
-    setRegAcreage('');
-    setRegYield('');
-    setRegDate('');
-    
-    setTimeout(() => setRegSuccess(false), 4000);
   };
 
-  // 🛑 SECURITY SHIELD TRIGGER: Render blocker dashboard warning if role check falls short
-  if (!isFarmer) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 pt-24">
-        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-xl">
-          <div className="w-14 h-14 bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto text-rose-400">
-            <ShieldX className="w-6 h-6" />
-          </div>
-          <h2 className="text-base font-black text-white uppercase tracking-wide">Access Protocol Denied</h2>
-          <p className="text-xs text-slate-400 leading-relaxed font-semibold">
-            The Market Prediction Intelligence Module is configured exclusively for registered **Farmers**. Please update your account persona setting inside the System Navigation hub to gain access.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const handleRegisterCrop = (crop) => {
+    const newRegistration = {
+      id: Date.now(),
+      cropName: crop.name,
+      cropId: crop.id,
+      currentPrice: crop.currentPrice,
+      predictedPrice: crop.predictedPrice,
+      area: parseFloat(registrationData.area),
+      expectedYield: parseFloat(registrationData.expectedHarvest),
+      plantingDate: registrationData.plantingDate,
+      registrationDate: new Date().toISOString(),
+      status: 'Active',
+      expectedProfit: (parseFloat(registrationData.area) * parseFloat(registrationData.expectedHarvest) * crop.currentPrice)
+    };
+    
+    const updated = [...registeredCrops, newRegistration];
+    setRegisteredCrops(updated);
+    localStorage.setItem('registeredCrops', JSON.stringify(updated));
+    setShowRegistrationModal(false);
+    setRegistrationData({ area: '', expectedHarvest: '', plantingDate: '' });
+    alert(`✅ ${crop.name} registered successfully!`);
+  };
+
+  const getRiskColor = (risk) => {
+    switch(risk) {
+      case 'Low': return 'bg-green-100 text-green-700';
+      case 'Medium': return 'bg-yellow-100 text-yellow-700';
+      case 'High': return 'bg-red-100 text-red-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const getDemandColor = (demand) => {
+    switch(demand) {
+      case 'Very High': return 'bg-purple-100 text-purple-700';
+      case 'High': return 'bg-green-100 text-green-700';
+      case 'Medium': return 'bg-yellow-100 text-yellow-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const profit = selectedCrop ? calculateProfit(selectedCrop) : null;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 pt-24 max-w-6xl mx-auto space-y-8 font-sans">
-      
-      {/* 📍 AUTOMATED LOCATION TRACKER HEADER BANNER */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs font-black text-emerald-400 uppercase tracking-widest">
-            <LineChart className="w-4 h-4" /> AI Predictive Intelligence
-          </div>
-          <h1 className="text-xl font-black tracking-tight text-white">Stable Market Horizons</h1>
-          <p className="text-xs text-slate-400 font-medium">
-            Analyzing historical vectors, supply volumes, and seasonal factors for your profile area.
-          </p>
-        </div>
-        
-        {/* Location Display Blocks (Completely automatic, no duplicate selector inputs) */}
-        <div className="flex items-center gap-3 bg-slate-950 p-3 rounded-2xl border border-slate-800/80 shrink-0">
-          <div className="px-3 py-1 bg-slate-900 border border-slate-700/60 rounded-xl text-center">
-            <span className="block text-[9px] font-black uppercase tracking-wider text-slate-500">State</span>
-            <span className="text-xs font-bold text-slate-200">{user.state}</span>
-          </div>
-          <div className="px-3 py-1 bg-slate-900 border border-slate-700/60 rounded-xl text-center">
-            <span className="block text-[9px] font-black uppercase tracking-wider text-slate-500">District Focus</span>
-            <span className="text-xs font-bold text-emerald-400">{user.district}</span>
-          </div>
-        </div>
+    <div className="min-h-screen bg-stone-50 pb-24">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-emerald-700 to-emerald-600 text-white px-5 pt-12 pb-6 sticky top-0 z-10">
+        <button 
+          onClick={() => navigate('/dashboard')} 
+          className="flex items-center space-x-2 mb-4 hover:opacity-80 transition"
+        >
+          <ArrowLeft size={20} />
+          <span>Back to Dashboard</span>
+        </button>
+        <h1 className="text-2xl font-bold">Market Prediction</h1>
+        <p className="text-emerald-100 text-sm mt-1">Crop prices, trends & profit calculator</p>
       </div>
 
-      {loading ? (
-        <div className="text-center py-12 text-xs font-bold text-slate-500 animate-pulse">Running location forecasting tables...</div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* ================= COLUMN 1 & 2: CROP FORECASTS & MARKET DATA ================= */}
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* 📊 CORE PREDICTION AND PRICE MATRIX TABLE */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-md space-y-4">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Layers className="w-4 h-4 text-emerald-500" /> District Pricing Forecasting Ledger
-              </h3>
-              
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-800 text-slate-500 font-bold">
-                      <th className="pb-3 font-bold text-[10px] uppercase">Crop Specimen</th>
-                      <th className="pb-3 font-bold text-[10px] uppercase text-right">Current Price</th>
-                      <th className="pb-3 font-bold text-[10px] uppercase text-right">Forecast (Next Mo.)</th>
-                      <th className="pb-3 font-bold text-[10px] uppercase text-center">Market Demand</th>
-                      <th className="pb-3 font-bold text-[10px] uppercase text-center">Risk Vector</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60">
-                    {marketData.map((crop, idx) => {
-                      const isUp = crop.predictedPriceNextMonth >= crop.currentPrice;
-                      return (
-                        <tr key={idx} className="hover:bg-slate-800/30 transition-colors group">
-                          <td className="py-3.5 font-bold text-slate-200 group-hover:text-white">{crop.cropName}</td>
-                          <td className="py-3.5 font-mono font-bold text-slate-300 text-right">₹{crop.currentPrice}/q</td>
-                          <td className="py-3.5 font-mono font-extrabold text-right">
-                            <span className={`inline-flex items-center gap-1 ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
-                              ₹{crop.predictedPriceNextMonth}/q
-                              {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                            </span>
-                          </td>
-                          <td className="py-3.5 text-center">
-                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-black ${crop.demandLevel === 'HIGH' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400'}`}>{crop.demandLevel}</span>
-                          </td>
-                          <td className="py-3.5 text-center">
-                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-black ${crop.riskFactor === 'LOW' ? 'bg-slate-800 text-slate-400' : 'bg-rose-500/10 text-rose-400'}`}>{crop.riskFactor}</span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+      {/* Registered Crops Summary */}
+      {registeredCrops.length > 0 && (
+        <div className="bg-emerald-50 mx-5 mt-4 rounded-xl p-4 border border-emerald-200">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold text-emerald-800 flex items-center">
+              <FileText size={18} className="mr-2" />
+              Your Registered Crops ({registeredCrops.length})
+            </h3>
+            <button 
+              onClick={() => navigate('/my-registrations')}
+              className="text-xs text-emerald-600 font-medium"
+            >
+              View All →
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {registeredCrops.slice(0, 3).map(crop => (
+              <span key={crop.id} className="bg-white px-3 py-1 rounded-full text-xs text-emerald-700">
+                {crop.cropName} • {crop.area} acres
+              </span>
+            ))}
+            {registeredCrops.length > 3 && (
+              <span className="bg-white px-3 py-1 rounded-full text-xs text-emerald-700">
+                +{registeredCrops.length - 3} more
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Market Cards */}
+      <div className="p-5 space-y-4">
+        {marketData.map((crop) => (
+          <div key={crop.id} className="bg-white rounded-xl shadow-sm border border-stone-100 overflow-hidden">
+            {/* Crop Header */}
+            <div className="p-4 border-b border-stone-100">
+              <div className="flex justify-between items-start">
+                <div className="flex items-center space-x-3">
+                  <span className="text-3xl">{crop.image}</span>
+                  <div>
+                    <h3 className="font-bold text-lg text-stone-800">{crop.name}</h3>
+                    <p className="text-xs text-stone-500">{crop.season} Season</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className={`text-xs px-2 py-1 rounded-full ${getRiskColor(crop.risk)}`}>
+                    Risk: {crop.risk}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* 🌾 SEASONAL INSIGHTS AND RISK ANALYSIS MAPS */}
-            <div className="space-y-3">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 px-1">AI Analytical Insights</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {marketData.map((crop, idx) => (
-                  <div key={idx} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-black text-slate-200">{crop.cropName}</span>
-                      <span className="text-[10px] font-bold text-slate-500 font-mono">Region Capped Data</span>
-                    </div>
-                    <p className="text-xs text-slate-400 font-medium leading-relaxed bg-slate-950 p-3 rounded-xl border border-slate-800/40">
-                      {crop.seasonalInsight}
-                    </p>
-                    <div className="flex items-center gap-1.5 text-[10px] text-amber-400 font-bold">
-                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                      <span>Risk profile rated {crop.riskFactor.toLowerCase()} for this yield window.</span>
-                    </div>
-                  </div>
-                ))}
+            {/* Price Info */}
+            <div className="p-4 bg-stone-50">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-stone-500">Current Price</p>
+                  <p className="text-2xl font-bold text-emerald-700">₹{crop.currentPrice}</p>
+                  <p className="text-xs text-stone-500">per quintal</p>
+                </div>
+                <div>
+                  <p className="text-xs text-stone-500">Predicted Price</p>
+                  <p className="text-2xl font-bold text-blue-700">₹{crop.predictedPrice}</p>
+                  <p className="text-xs text-green-600">{crop.trend} expected rise</p>
+                </div>
               </div>
             </div>
 
-            {/* 📋 SECTION: MY REGISTRATIONS PROFILE ENGINE */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-md space-y-4">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Briefcase className="w-4 h-4 text-emerald-500" /> My Current Crop Registrations
-              </h3>
-              
-              {myRegistrations.length === 0 ? (
-                <div className="text-center py-8 bg-slate-950 rounded-2xl border border-slate-800/60 border-dashed text-slate-500 text-xs font-bold">
-                  No active cultivation cycles logged for this section yet, bruhh. Use the configuration form to add one.
+            {/* Demand & Recommendation */}
+            <div className="p-4">
+              <div className="flex justify-between items-center mb-3">
+                <span className={`text-xs px-2 py-1 rounded-full ${getDemandColor(crop.demand)}`}>
+                  Demand: {crop.demand}
+                </span>
+                <span className="text-xs text-stone-500">Confidence: {crop.confidence}%</span>
+              </div>
+              <div className="bg-emerald-50 rounded-lg p-3 mb-4">
+                <p className="text-xs text-emerald-600 font-semibold">🤖 AI Recommendation</p>
+                <p className="text-sm text-stone-700">{crop.recommendation}</p>
+                <p className="text-xs text-emerald-600 mt-1">💡 {crop.tip}</p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setSelectedCrop(crop);
+                    setShowProfitModal(true);
+                  }}
+                  className="flex-1 bg-emerald-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition flex items-center justify-center"
+                >
+                  <Calculator size={16} className="mr-2" />
+                  Calculate Profit
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedCrop(crop);
+                    setShowRegistrationModal(true);
+                  }}
+                  className="flex-1 border-2 border-emerald-600 text-emerald-700 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-50 transition flex items-center justify-center"
+                >
+                  <Plus size={16} className="mr-2" />
+                  Register Crop
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Profit Calculator Modal */}
+      {showProfitModal && selectedCrop && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white p-4 border-b flex justify-between items-center">
+              <h2 className="text-xl font-bold text-stone-800">Profit Calculator</h2>
+              <button onClick={() => setShowProfitModal(false)} className="p-1 hover:bg-stone-100 rounded">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-5">
+              <div className="mb-4 text-center">
+                <span className="text-4xl">{selectedCrop.image}</span>
+                <h3 className="font-bold text-lg mt-1">{selectedCrop.name}</h3>
+                <p className="text-emerald-700 font-bold">₹{selectedCrop.currentPrice}/quintal</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Land Area (acres)</label>
+                  <input
+                    type="number"
+                    value={profitData.landArea}
+                    onChange={(e) => setProfitData({...profitData, landArea: e.target.value})}
+                    placeholder="e.g., 5"
+                    className="w-full p-3 border border-stone-200 rounded-xl"
+                  />
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {myRegistrations.map((reg) => (
-                    <div key={reg.id} className="flex items-center justify-between bg-slate-950 border border-slate-800 p-3.5 rounded-xl hover:border-slate-700 transition-colors">
-                      <div className="space-y-0.5">
-                        <p className="text-xs font-black text-slate-200">{reg.cropName}</p>
-                        <p className="text-[10px] text-slate-500 font-bold">
-                          Acreage: <span className="text-slate-300">{reg.acreage} Acres</span> • Target Harvest: <span className="text-slate-300">{reg.expectedHarvestDate}</span>
-                        </p>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Expected Yield (quintals/acre)</label>
+                  <input
+                    type="number"
+                    value={profitData.expectedYield}
+                    onChange={(e) => setProfitData({...profitData, expectedYield: e.target.value})}
+                    placeholder="e.g., 20"
+                    className="w-full p-3 border border-stone-200 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Total Cost (₹) - Optional</label>
+                  <input
+                    type="number"
+                    value={profitData.totalCost}
+                    onChange={(e) => setProfitData({...profitData, totalCost: e.target.value})}
+                    placeholder="e.g., 50000"
+                    className="w-full p-3 border border-stone-200 rounded-xl"
+                  />
+                </div>
+
+                {profit && (
+                  <div className="bg-emerald-50 rounded-xl p-4 mt-4">
+                    <h4 className="font-semibold text-emerald-800 mb-2">Profit Summary</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-stone-600">Total Expected Yield</span>
+                        <span className="font-semibold">{profit.totalYield} quintals</span>
                       </div>
-                      <div className="text-right">
-                        <span className="text-xs font-mono font-black text-emerald-400 block">~{reg.estimatedYield} quintals</span>
-                        <span className="text-[9px] text-slate-600 font-bold uppercase tracking-wider">Logged {reg.timestamp}</span>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-stone-600">Expected Revenue</span>
+                        <span className="font-semibold text-emerald-700">₹{profit.revenue.toLocaleString()}</span>
+                      </div>
+                      {profitData.totalCost && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-stone-600">Total Cost</span>
+                          <span className="font-semibold">₹{parseFloat(profitData.totalCost).toLocaleString()}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between pt-2 border-t">
+                        <span className="text-sm font-semibold">Net Profit</span>
+                        <span className="font-bold text-emerald-700 text-lg">₹{profit.netProfit.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-stone-600">Profit per Acre</span>
+                        <span className="font-semibold">₹{profit.profitPerAcre.toLocaleString()}</span>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => setShowProfitModal(false)}
+                className="w-full mt-6 bg-emerald-600 text-white py-3 rounded-xl font-semibold"
+              >
+                Close
+              </button>
             </div>
-
           </div>
+        </div>
+      )}
 
-          {/* ================= COLUMN 3: SIDEBAR MANAGEMENT CALCULATORS ================= */}
-          <div className="space-y-6">
+      {/* Register Crop Modal */}
+      {showRegistrationModal && selectedCrop && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full">
+            <div className="p-4 border-b flex justify-between items-center">
+              <h2 className="text-xl font-bold text-stone-800">Register {selectedCrop.name}</h2>
+              <button onClick={() => setShowRegistrationModal(false)} className="p-1 hover:bg-stone-100 rounded">
+                <X size={20} />
+              </button>
+            </div>
             
-            {/* 🧮 INTERACTIVE PROFIT ARITHMETIC ENGINE */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-md space-y-4">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Calculator className="w-4 h-4 text-emerald-500" /> Farm Yield Profit Calculator
-              </h3>
-              
-              <form onSubmit={executeProfitCalculation} className="space-y-3">
+            <div className="p-5">
+              <div className="mb-4 bg-emerald-50 p-3 rounded-xl">
+                <p className="text-sm text-stone-600">Current Market Price</p>
+                <p className="text-2xl font-bold text-emerald-700">₹{selectedCrop.currentPrice}/quintal</p>
+                <p className="text-xs text-green-600">Predicted: ₹{selectedCrop.predictedPrice} (+{selectedCrop.trend})</p>
+              </div>
+
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase text-slate-500 tracking-wider mb-1">Target Commodity</label>
-                  <select 
-                    value={calcSelectedCrop} onChange={(e) => setCalcSelectedCrop(e.target.value)}
-                    className="w-full text-xs p-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 font-bold focus:outline-none focus:border-emerald-500 cursor-pointer"
-                  >
-                    {marketData.map((c, i) => (
-                      <option key={i} value={c.cropName}>{c.cropName}</option>
-                    ))}
-                  </select>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Area (acres)</label>
+                  <input
+                    type="number"
+                    value={registrationData.area}
+                    onChange={(e) => setRegistrationData({...registrationData, area: e.target.value})}
+                    placeholder="e.g., 5"
+                    className="w-full p-3 border border-stone-200 rounded-xl"
+                    required
+                  />
                 </div>
-
                 <div>
-                  <label className="block text-[10px] font-bold uppercase text-slate-500 tracking-wider mb-1">Total Acreage</label>
-                  <input type="number" required placeholder="e.g., 3" value={calcAcreage} onChange={(e) => setCalcAcreage(e.target.value)} className="w-full text-xs p-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono font-bold focus:outline-none focus:border-emerald-500" />
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Expected Yield (quintals)</label>
+                  <input
+                    type="number"
+                    value={registrationData.expectedHarvest}
+                    onChange={(e) => setRegistrationData({...registrationData, expectedHarvest: e.target.value})}
+                    placeholder="Total expected production"
+                    className="w-full p-3 border border-stone-200 rounded-xl"
+                    required
+                  />
                 </div>
-
                 <div>
-                  <label className="block text-[10px] font-bold uppercase text-slate-500 tracking-wider mb-1">Estimated Input Cost (₹)</label>
-                  <input type="number" required placeholder="Seed, fertilizer, labor costs" value={calcCost} onChange={(e) => setCalcCost(e.target.value)} className="w-full text-xs p-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono font-bold focus:outline-none focus:border-emerald-500" />
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Planting Date</label>
+                  <input
+                    type="date"
+                    value={registrationData.plantingDate}
+                    onChange={(e) => setRegistrationData({...registrationData, plantingDate: e.target.value})}
+                    className="w-full p-3 border border-stone-200 rounded-xl"
+                    required
+                  />
                 </div>
+              </div>
 
-                <button type="submit" className="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors border border-slate-700 text-xs font-black text-slate-200 uppercase tracking-wider flex items-center justify-center gap-1.5">
-                  Run Cost Calculation
-                </button>
-              </form>
-
-              {/* Arithmetic Output Readouts */}
-              {calculatedProfit && (
-                <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 mt-2 space-y-2.5 animate-slide-up">
-                  <div className="flex justify-between border-b border-slate-900 pb-1.5 text-[11px]">
-                    <span className="text-slate-500 font-bold">Estimated Yield Volume</span>
-                    <span className="font-mono text-slate-300 font-bold">{calculatedProfit.yieldTotal} quintals</span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-900 pb-1.5 text-[11px]">
-                    <span className="text-slate-500 font-bold">Projected Gross Returns</span>
-                    <span className="font-mono text-slate-300 font-bold">₹{calculatedProfit.revenue.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-emerald-500 font-black uppercase tracking-wider">Net Profit Horizon</span>
-                    <span className={`font-mono font-black text-sm ${calculatedProfit.profit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      ₹{calculatedProfit.profit.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              )}
+              <button
+                onClick={() => handleRegisterCrop(selectedCrop)}
+                className="w-full mt-6 bg-emerald-600 text-white py-3 rounded-xl font-semibold hover:bg-emerald-700 transition"
+              >
+                Register Crop
+              </button>
             </div>
-
-            {/* 📝 CROP REGISTRATION INPUT BOARD */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-md space-y-4">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <PlusCircle className="w-4 h-4 text-emerald-500" /> Cultivation Registration Form
-              </h3>
-              
-              <form onSubmit={handleRegisterCrop} className="space-y-3">
-                <div>
-                  <label className="block text-[10px] font-bold uppercase text-slate-500 tracking-wider mb-1">Crop Name</label>
-                  <input type="text" required placeholder="e.g., Ragi, Wheat" value={regCropName} onChange={(e) => setRegCropName(e.target.value)} className="w-full text-xs p-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold focus:outline-none focus:border-emerald-500" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase text-slate-500 tracking-wider mb-1">Acreage</label>
-                    <input type="number" required placeholder="Acres" value={regAcreage} onChange={(e) => setRegAcreage(e.target.value)} className="w-full text-xs p-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold focus:outline-none focus:border-emerald-500" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase text-slate-500 tracking-wider mb-1">Est. Yield (q)</label>
-                    <input type="number" required placeholder="Quintals" value={regYield} onChange={(e) => setRegYield(e.target.value)} className="w-full text-xs p-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold focus:outline-none focus:border-emerald-500" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold uppercase text-slate-500 tracking-wider mb-1">Target Harvest Date</label>
-                  <input type="date" value={regDate} onChange={(e) => setRegDate(e.target.value)} className="w-full text-xs p-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-bold focus:outline-none focus:border-emerald-500" />
-                </div>
-
-                <button type="submit" className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 transition-colors text-white text-xs font-black rounded-xl uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md">
-                  Log Crop To System Ledger
-                </button>
-              </form>
-
-              {regSuccess && (
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs rounded-xl flex items-center gap-2 font-bold animate-pulse">
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  <span>Crop sequence recorded inside regional data registers successfully!</span>
-                </div>
-              )}
-            </div>
-
           </div>
-
         </div>
       )}
     </div>

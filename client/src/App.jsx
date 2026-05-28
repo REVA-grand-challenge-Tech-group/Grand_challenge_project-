@@ -1,44 +1,40 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Navbar from './components/Navbar'; 
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AppProvider } from './context/AppContext';
+import { AuthProvider } from './context/AuthContext';
 
-import LanguagePage from './pages/LanguagePage'; 
-import RolePage from './pages/RolePage'; 
-import LoginPage from './pages/LoginPage'; 
-import DashboardPage from './pages/DashboardPage'; 
-import MarketPrediction from './pages/MarketPrediction.jsx';
+// Import all pages
+import LanguagePage from './pages/LanguagePage';
+import RolePage from './pages/RolePage';
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import MarketPrediction from './pages/MarketPrediction';
+import MyRegistrations from './pages/MyRegistrations';
+import PostJob from './pages/PostJob';
+import FindJobs from './pages/FindJobs';
+import MyApplications from './pages/MyApplications';
+import Chat from './pages/Chat';
 
-function App() {
+
+export default function App() {
   return (
-    <Router>
-      {/* Persistent Navigation Layer */}
-      <Navbar /> 
-      
-      <main className="min-h-screen bg-slate-950 text-slate-100">
-        <Routes>
-          {/* STEP 1: Core Localization Channel */}
-          <Route path="/" element={<LanguagePage />} />
-
-          {/* STEP 2: Persona Matching */}
-          <Route path="/role" element={<RolePage />} />
-          <Route path="/select-role" element={<RolePage />} />
-
-          {/* STEP 3: Auth Channel */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<LoginPage />} />
-
-          {/* STEP 4: Central Operational Dashboard Matrix */}
-          <Route path="/dashboard" element={<DashboardPage />} />
-
-          {/* STEP 5: Market Prediction Module */}
-          <Route path="/market-prediction" element={<MarketPrediction />} />
-
-          {/* Fallback Redirection Sequence Route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </main>
-    </Router>
+    <BrowserRouter>
+      <AppProvider>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<LanguagePage />} />
+            <Route path="/language" element={<LanguagePage />} />
+            <Route path="/role" element={<RolePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/market-prediction" element={<MarketPrediction />} />
+            <Route path="/my-registrations" element={<MyRegistrations />} />
+            <Route path="/post-job" element={<PostJob />} />
+            <Route path="/find-jobs" element={<FindJobs />} />
+            <Route path="/my-applications" element={<MyApplications />} />
+            <Route path="/community-chat" element={<Chat />} />
+          </Routes>
+        </AuthProvider>
+      </AppProvider>
+    </BrowserRouter>
   );
 }
-
-export default App;

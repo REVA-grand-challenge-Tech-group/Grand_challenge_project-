@@ -1,29 +1,78 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Clock, CheckCircle, XCircle } from 'lucide-react';
 
 const MyApplications = () => {
-  const [applications, setApplications] = useState([
-    { id: 1, crop: 'Rice', work: 'Harvesting', location: 'Hassan', wage: 400, status: 'Pending', appliedDate: '2024-01-15' },
-    { id: 2, crop: 'Tomato', work: 'Plucking', location: 'Belgaum', wage: 350, status: 'Accepted', appliedDate: '2024-01-14' },
-  ]);
+  const navigate = useNavigate();
+  const [applications, setApplications] = useState([]);
+
+  useEffect(() => {
+    // Load applications from localStorage
+    const saved = localStorage.getItem('myApplications');
+    if (saved) {
+      setApplications(JSON.parse(saved));
+    }
+  }, []);
+
+  const getStatusIcon = (status) => {
+    switch(status) {
+      case 'Pending': return <Clock size={16} className="text-yellow-500" />;
+      case 'Accepted': return <CheckCircle size={16} className="text-green-500" />;
+      case 'Rejected': return <XCircle size={16} className="text-red-500" />;
+      default: return <Clock size={16} className="text-yellow-500" />;
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'Pending': return 'bg-yellow-100 text-yellow-700';
+      case 'Accepted': return 'bg-green-100 text-green-700';
+      case 'Rejected': return 'bg-red-100 text-red-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 pb-24">
-      <div className="bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg sticky top-0 z-20">
-        <div className="max-w-2xl mx-auto px-4 py-4">
-          <div className="flex items-center"><Link to="/dashboard" className="mr-4 text-white text-2xl">←</Link><h1 className="text-xl font-bold">My Applications</h1></div>
-        </div>
+    <div className="min-h-screen bg-stone-50">
+      <div className="bg-gradient-to-r from-emerald-700 to-emerald-600 text-white px-5 pt-12 pb-6">
+        <button onClick={() => navigate('/dashboard')} className="flex items-center space-x-2 mb-4">
+          <ArrowLeft size={20} />
+          <span>Back to Dashboard</span>
+        </button>
+        <h1 className="text-2xl font-bold">My Applications</h1>
+        <p className="text-emerald-100 text-sm">Track your job applications</p>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        {applications.map((app) => (
-          <div key={app.id} className="bg-white rounded-2xl shadow-md p-4 mb-4 border">
-            <div className="flex justify-between items-start"><div><h3 className="font-bold text-lg text-green-700">🌾 {app.crop} - {app.work}</h3><p className="text-sm text-gray-600">📍 {app.location}</p></div>
-            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${app.status === 'Accepted' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{app.status}</span></div>
-            <div className="grid grid-cols-2 gap-2 mt-3 text-sm"><div>💰 Wage: ₹{app.wage}/day</div><div>📅 Applied: {app.appliedDate}</div></div>
-            {app.status === 'Accepted' && <button className="mt-3 w-full bg-green-600 text-white py-2 rounded-xl text-sm font-medium">📞 Contact Farmer</button>}
+      <div className="p-5 pb-24">
+        {applications.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">📋</div>
+            <p className="text-stone-500">No applications yet</p>
+            <button 
+              onClick={() => navigate('/find-jobs')}
+              className="mt-4 bg-emerald-600 text-white px-6 py-2 rounded-lg"
+            >
+              Browse Jobs
+            </button>
           </div>
-        ))}
+        ) : (
+          <div className="space-y-3">
+            {applications.map((app, idx) => (
+              <div key={idx} className="bg-white rounded-xl p-4 shadow-sm">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-bold text-stone-800">{app.jobTitle}</h3>
+                  <span className={`text-xs px-2 py-1 rounded-full flex items-center space-x-1 ${getStatusColor(app.status)}`}>
+                    {getStatusIcon(app.status)}
+                    <span>{app.status}</span>
+                  </span>
+                </div>
+                <p className="text-xs text-stone-400">
+                  Applied on: {new Date(app.appliedDate).toLocaleDateString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,27 +1,51 @@
+// src/context/AppContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// Create App Context
 const AppContext = createContext();
 
-export const useApp = () => useContext(AppContext);
+export const useApp = () => {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useApp must be used within AppProvider');
+  }
+  return context;
+};
 
 export const AppProvider = ({ children }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [notifications, setNotifications] = useState([]);
+  const [language, setLanguage] = useState(() => {
+    return localStorage.getItem('language') || 'en';
+  });
+  
+  const [role, setRole] = useState(() => {
+    return localStorage.getItem('userRole') || null;
+  });
 
-  const showNotification = (message, type = 'info') => {
-    setNotifications(prev => [...prev, { id: Date.now(), message, type }]);
-    setTimeout(() => {
-      setNotifications(prev => prev.filter(n => n.id !== Date.now()));
-    }, 3000);
+  useEffect(() => {
+    if (language) localStorage.setItem('language', language);
+  }, [language]);
+
+  useEffect(() => {
+    if (role) localStorage.setItem('userRole', role);
+  }, [role]);
+
+  const updateLanguage = (lang) => {
+    console.log("Setting language:", lang);
+    setLanguage(lang);
+  };
+
+  const updateRole = (userRole) => {
+    console.log("Setting role:", userRole);
+    setRole(userRole);
   };
 
   return (
     <AppContext.Provider value={{
-      isLoading,
-      setIsLoading,
-      notifications,
-      showNotification
+      language,
+      setLanguage: updateLanguage,
+      updateLanguage,
+      role,
+      setRole: updateRole,
+      updateRole
     }}>
       {children}
     </AppContext.Provider>
