@@ -1,136 +1,140 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useApp } from '../context/AppContext';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { ArrowLeft, Droplets, Wind, Thermometer, Sunrise, Sunset, Cloud, Sun, CloudRain } from 'lucide-react';
 
 const Weather = () => {
-  const { t, language } = useApp();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [weather, setWeather] = useState(null);
+  const [forecast, setForecast] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulated weather data (will connect to real API later)
-    setTimeout(() => {
-      const weatherData = {
-        current: {
-          temp: 28,
-          condition: language === 'hi' ? 'धूप' : language === 'kn' ? 'ಬಿಸಿಲು' : 'Sunny',
-          humidity: 65,
-          windSpeed: 12,
-          icon: '☀️'
-        },
-        forecast: [
-          { day: language === 'hi' ? 'आज' : language === 'kn' ? 'ಇಂದು' : 'Today', temp: 28, condition: 'Sunny', icon: '☀️', rain: '0%' },
-          { day: language === 'hi' ? 'कल' : language === 'kn' ? 'ನಾಳೆ' : 'Tomorrow', temp: 26, condition: 'Partly Cloudy', icon: '⛅', rain: '10%' },
-          { day: language === 'hi' ? 'बुधवार' : language === 'kn' ? 'ಬುಧವಾರ' : 'Wed', temp: 25, condition: 'Cloudy', icon: '☁️', rain: '30%' },
-          { day: language === 'hi' ? 'गुरुवार' : language === 'kn' ? 'ಗುರುವಾರ' : 'Thu', temp: 24, condition: 'Rain', icon: '🌧️', rain: '70%' },
-          { day: language === 'hi' ? 'शुक्रवार' : language === 'kn' ? 'ಶುಕ್ರವಾರ' : 'Fri', temp: 26, condition: 'Sunny', icon: '☀️', rain: '5%' },
-          { day: language === 'hi' ? 'शनिवार' : language === 'kn' ? 'ಶನಿವಾರ' : 'Sat', temp: 27, condition: 'Sunny', icon: '☀️', rain: '0%' },
-          { day: language === 'hi' ? 'रविवार' : language === 'kn' ? 'ಭಾನುವಾರ' : 'Sun', temp: 29, condition: 'Sunny', icon: '☀️', rain: '0%' }
-        ],
-        advice: language === 'hi' 
-          ? 'बुवाई के लिए अच्छा मौसम। गुरुवार को हल्की बारिश की संभावना।'
-          : language === 'kn'
-          ? 'ಬಿತ್ತನೆಗೆ ಉತ್ತಮ ಹವಾಮಾನ. ಗುರುವಾರ ಸ್ವಲ್ಪ ಮಳೆಯ ನಿರೀಕ್ಷೆಯಿದೆ.'
-          : 'Good weather for sowing. Light rain expected on Thursday.'
-      };
-      setWeather(weatherData);
-      setLoading(false);
-    }, 1000);
-  }, [language]);
+    loadWeatherData();
+  }, [user]);
+
+  const loadWeatherData = () => {
+    const district = user?.district || 'Mandya';
+    
+    // Weather data based on district
+    const weatherData = {
+      'Mandya': { temp: 28, feelsLike: 30, condition: 'Sunny', humidity: 65, wind: 12, pressure: 1012, icon: '☀️', sunrise: '6:15 AM', sunset: '6:45 PM' },
+      'Mysore': { temp: 27, feelsLike: 29, condition: 'Partly Cloudy', humidity: 70, wind: 10, pressure: 1011, icon: '⛅', sunrise: '6:20 AM', sunset: '6:40 PM' },
+      'Hassan': { temp: 26, feelsLike: 28, condition: 'Cloudy', humidity: 75, wind: 8, pressure: 1010, icon: '☁️', sunrise: '6:25 AM', sunset: '6:35 PM' },
+      'Bengaluru': { temp: 25, feelsLike: 26, condition: 'Sunny', humidity: 60, wind: 15, pressure: 1013, icon: '☀️', sunrise: '6:10 AM', sunset: '6:50 PM' },
+      'default': { temp: 28, feelsLike: 30, condition: 'Sunny', humidity: 65, wind: 12, pressure: 1012, icon: '☀️', sunrise: '6:15 AM', sunset: '6:45 PM' }
+    };
+    
+    const currentWeather = weatherData[district] || weatherData.default;
+    setWeather({ ...currentWeather, district });
+    
+    // 5-day forecast
+    setForecast([
+      { day: 'Today', temp: 28, condition: 'Sunny', icon: '☀️', rain: '0%' },
+      { day: 'Tomorrow', temp: 29, condition: 'Partly Cloudy', icon: '⛅', rain: '10%' },
+      { day: 'Wed', temp: 27, condition: 'Cloudy', icon: '☁️', rain: '20%' },
+      { day: 'Thu', temp: 26, condition: 'Light Rain', icon: '🌧️', rain: '60%' },
+      { day: 'Fri', temp: 27, condition: 'Sunny', icon: '☀️', rain: '5%' }
+    ]);
+    
+    setLoading(false);
+  };
+
+  const getFarmingTip = () => {
+    const tips = {
+      'Sunny': '☀️ Good day for harvesting! Perfect weather for drying grains.',
+      'Partly Cloudy': '⛅ Ideal conditions for pesticide spray. Light wind helps distribution.',
+      'Cloudy': '☁️ Good for transplanting seedlings. Less water evaporation.',
+      'Light Rain': '🌧️ Avoid fertilizer application. Check drainage systems.',
+      'default': '🌱 Regular farming activities can continue.'
+    };
+    return tips[weather?.condition] || tips.default;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-stone-50">
+        <div className="text-center">Loading weather data...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-4 py-4">
-          <div className="flex items-center">
-            <Link to="/dashboard" className="mr-4 text-green-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </Link>
-            <h1 className="text-xl font-bold text-gray-800">
-              {language === 'hi' ? 'मौसम पूर्वानुमान' : language === 'kn' ? 'ಹವಾಮಾನ ಮುನ್ಸೂಚನೆ' : 'Weather Forecast'}
-            </h1>
-          </div>
-        </div>
+    <div className="min-h-screen bg-stone-50 pb-24">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-emerald-700 to-emerald-600 text-white px-5 pt-12 pb-6">
+        <button onClick={() => navigate('/dashboard')} className="flex items-center space-x-2 mb-4 hover:opacity-80">
+          <ArrowLeft size={20} />
+          <span>Back to Dashboard</span>
+        </button>
+        <h1 className="text-2xl font-bold">Weather</h1>
+        <p className="text-emerald-100 text-sm mt-1">Farming forecast for {weather?.district}</p>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+      {/* Current Weather */}
+      <div className="p-5">
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <div className="text-center mb-6">
+            <span className="text-6xl">{weather?.icon}</span>
+            <p className="text-4xl font-bold text-stone-800 mt-2">{weather?.temp}°C</p>
+            <p className="text-stone-500">{weather?.condition}</p>
+            <p className="text-sm text-stone-400 mt-1">Feels like {weather?.feelsLike}°C</p>
           </div>
-        ) : (
-          <>
-            {/* Current Weather */}
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 mb-6 text-white shadow-lg">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-blue-100 text-sm">
-                    {language === 'hi' ? 'वर्तमान मौसम' : language === 'kn' ? 'ಪ್ರಸ್ತುತ ಹವಾಮಾನ' : 'Current Weather'}
-                  </p>
-                  <div className="text-5xl font-bold mt-2">{weather.current.temp}°C</div>
-                  <p className="text-xl mt-1">{weather.current.condition}</p>
-                  <div className="flex space-x-4 mt-3 text-sm">
-                    <span>💧 {weather.current.humidity}%</span>
-                    <span>💨 {weather.current.windSpeed} km/h</span>
-                  </div>
-                </div>
-                <div className="text-7xl">{weather.current.icon}</div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center gap-3 p-3 bg-stone-50 rounded-xl">
+              <Droplets size={20} className="text-emerald-600" />
+              <div>
+                <p className="text-xs text-stone-500">Humidity</p>
+                <p className="font-semibold">{weather?.humidity}%</p>
               </div>
             </div>
-
-            {/* Farmer Advice */}
-            <div className="bg-amber-50 rounded-xl p-4 mb-6 border border-amber-200">
-              <div className="flex items-start">
-                <span className="text-2xl mr-3">🌾</span>
-                <div>
-                  <h3 className="font-semibold text-amber-800">
-                    {language === 'hi' ? 'किसान सलाह' : language === 'kn' ? 'ರೈತರ ಸಲಹೆ' : "Farmer's Advice"}
-                  </h3>
-                  <p className="text-amber-700 text-sm mt-1">{weather.advice}</p>
-                </div>
+            <div className="flex items-center gap-3 p-3 bg-stone-50 rounded-xl">
+              <Wind size={20} className="text-emerald-600" />
+              <div>
+                <p className="text-xs text-stone-500">Wind Speed</p>
+                <p className="font-semibold">{weather?.wind} km/h</p>
               </div>
             </div>
-
-            {/* 7-Day Forecast */}
-            <h3 className="font-semibold text-gray-800 mb-3">
-              {language === 'hi' ? '7 दिन का पूर्वानुमान' : language === 'kn' ? '7 ದಿನಗಳ ಮುನ್ಸೂಚನೆ' : '7-Day Forecast'}
-            </h3>
-            <div className="space-y-2 mb-6">
-              {weather.forecast.map((day, index) => (
-                <div key={index} className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <span className="text-2xl">{day.icon}</span>
-                      <div>
-                        <div className="font-medium text-gray-800">{day.day}</div>
-                        <div className="text-xs text-gray-500">{day.condition}</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-gray-800">{day.temp}°C</div>
-                      <div className="text-xs text-blue-600">{language === 'hi' ? 'बारिश' : language === 'kn' ? 'ಮಳೆ' : 'Rain'}: {day.rain}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Crop Recommendation based on weather */}
-            <div className="bg-green-50 rounded-xl p-4 border border-green-200">
-              <h3 className="font-semibold text-green-800 mb-2">
-                {language === 'hi' ? 'इस मौसम के लिए अनुशंसित फसलें' : language === 'kn' ? 'ಈ ಹವಾಮಾನಕ್ಕೆ ಶಿಫಾರಸು ಮಾಡಲಾದ ಬೆಳೆಗಳು' : 'Recommended Crops for this Weather'}
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                <span className="bg-white px-3 py-1 rounded-full text-sm text-green-700">🌾 Rice</span>
-                <span className="bg-white px-3 py-1 rounded-full text-sm text-green-700">🌽 Corn</span>
-                <span className="bg-white px-3 py-1 rounded-full text-sm text-green-700">🍅 Tomato</span>
-                <span className="bg-white px-3 py-1 rounded-full text-sm text-green-700">🌶️ Chilli</span>
+            <div className="flex items-center gap-3 p-3 bg-stone-50 rounded-xl">
+              <Sunrise size={20} className="text-emerald-600" />
+              <div>
+                <p className="text-xs text-stone-500">Sunrise</p>
+                <p className="font-semibold text-sm">{weather?.sunrise}</p>
               </div>
             </div>
-          </>
-        )}
+            <div className="flex items-center gap-3 p-3 bg-stone-50 rounded-xl">
+              <Sunset size={20} className="text-emerald-600" />
+              <div>
+                <p className="text-xs text-stone-500">Sunset</p>
+                <p className="font-semibold text-sm">{weather?.sunset}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 5-Day Forecast */}
+        <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
+          <h3 className="font-bold text-stone-800 mb-4">5-Day Forecast</h3>
+          <div className="space-y-3">
+            {forecast.map((day, idx) => (
+              <div key={idx} className="flex justify-between items-center py-2 border-b last:border-0">
+                <span className="font-medium w-20">{day.day}</span>
+                <span className="text-2xl">{day.icon}</span>
+                <span className="text-stone-600 flex-1 ml-2">{day.condition}</span>
+                <span className="font-semibold">{day.temp}°C</span>
+                <span className="text-xs text-blue-500 w-12 text-right">{day.rain}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Farming Tip */}
+        <div className="bg-emerald-50 rounded-xl p-5 border-l-4 border-emerald-500">
+          <p className="text-xs text-emerald-600 font-semibold mb-1">🌾 TODAY'S FARMING TIP</p>
+          <p className="text-stone-700 text-sm">{getFarmingTip()}</p>
+        </div>
       </div>
     </div>
   );

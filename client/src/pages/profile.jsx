@@ -1,311 +1,131 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useLanguage } from '../context/LanguageContext';
-import axios from 'axios';
-import VoiceInputWithValidation from '../components/VoiceInputWithValidation';
+import { ArrowLeft, User, Phone, MapPin, Calendar, Sprout, Briefcase, Edit2, Save, X, LogOut } from 'lucide-react';
 
 const Profile = () => {
-  const { user, setUser, token } = useAuth();
-  const { translations, currentLanguage } = useLanguage();
+  const navigate = useNavigate();
+  const { user, logout, updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [stats, setStats] = useState({ cropsCount: 0, jobsCount: 0 });
   const [formData, setFormData] = useState({
     fullName: '',
-    bio: '',
-    farmSize: '',
+    phoneNumber: '',
     state: '',
     district: ''
   });
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
 
   useEffect(() => {
     if (user) {
       setFormData({
         fullName: user.fullName || '',
-        bio: user.bio || '',
-        farmSize: user.farmSize || '',
-        state: user.state || '',
-        district: user.district || ''
+        phoneNumber: user.phoneNumber || '',
+        state: user.state || 'Karnataka',
+        district: user.district || 'Mandya'
       });
     }
+    loadStats();
   }, [user]);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const loadStats = () => {
+    const crops = JSON.parse(localStorage.getItem('registeredCrops') || '[]');
+    const myCrops = crops.filter(c => c.farmerId === user?.id);
+    const jobs = JSON.parse(localStorage.getItem('jobs') || '[]');
+    const myJobs = jobs.filter(j => j.farmerId === user?.id);
+    setStats({ cropsCount: myCrops.length, jobsCount: myJobs.length });
   };
 
-  const handleVoiceInput = (field, value) => {
-    setFormData({
-      ...formData,
-      [field]: value
-    });
+  const handleSave = () => {
+    updateUser(formData);
+    setIsEditing(false);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage('');
-
-    try {
-      const response = await axios.put(
-        'http://localhost:5000/api/users/profile',
-        formData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (response.data.success) {
-        // Update user context immediately
-        setUser({
-          ...user,
-          ...formData
-        });
-        
-        // Also update localStorage
-        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-        localStorage.setItem('user', JSON.stringify({
-          ...storedUser,
-          ...formData
-        }));
-        
-        setMessage('Profile updated successfully!');
-        setIsEditing(false);
-        
-        // Clear message after 3 seconds
-        setTimeout(() => setMessage(''), 3000);
-      }
-    } catch (error) {
-      console.error('Profile update error:', error);
-      setMessage('Failed to update profile. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+  const handleLogout = () => {
+    logout();
+    navigate('/language');
   };
 
-  // Stats based on role
-  const getStats = () => {
-    const stats = [];
-    
-    if (user?.role === 'farmer' || user?.role === 'both') {
-      stats.push(
-        { label: 'Crops Registered', value: user?.cropsCount || 0, icon: '🌾' },
-        { label: 'Jobs Posted', value: user?.jobsPosted || 0, icon: '📝' }
-      );
-    }
-    
-    if (user?.role === 'labourer' || user?.role === 'both') {
-      stats.push(
-        { label: 'Applications', value: user?.applicationsCount || 0, icon: '📄' }
-      );
-    }
-    
-    return stats;
-  };
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-stone-50">
+        <div className="text-center">Loading profile...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Profile Header */}
-      <div className="bg-gradient-to-r from-green-600 to-green-700 text-white p-6">
-        <div className="flex items-center space-x-4">
-          <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
-            <span className="text-green-600 text-3xl font-bold">
-              {user?.fullName?.charAt(0) || 'U'}
-            </span>
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">{user?.fullName}</h1>
-            <p className="text-green-100 capitalize">{user?.role}</p>
-            <p className="text-green-100 text-sm">{user?.phoneNumber}</p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-stone-50 pb-24">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-emerald-700 to-emerald-600 text-white px-5 pt-12 pb-6">
+        <button onClick={() => navigate('/dashboard')} className="flex items-center space-x-2 mb-4 hover:opacity-80">
+          <ArrowLeft size={20} />
+          <span>Back to Dashboard</span>
+        </button>
+        <h1 className="text-2xl font-bold">My Profile</h1>
+        <p className="text-emerald-100 text-sm">Manage your account information</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-4 p-4">
-        {getStats().map((stat, index) => (
-          <div key={index} className="bg-white rounded-xl shadow-md p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-2xl">{stat.icon}</span>
-              <span className="text-2xl font-bold text-green-600">{stat.value}</span>
+      <div className="p-5">
+        {/* Profile Card */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+          <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 p-6 text-white text-center">
+            <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-3">
+              <span className="text-4xl font-bold text-emerald-700">{user?.fullName?.charAt(0) || 'U'}</span>
             </div>
-            <p className="text-gray-600 text-sm mt-2">{stat.label}</p>
+            {!isEditing ? (
+              <>
+                <h2 className="text-xl font-bold">{user?.fullName || 'User'}</h2>
+                <p className="text-emerald-100 capitalize mt-1">{user?.role || 'Farmer'}</p>
+                <button onClick={() => setIsEditing(true)} className="mt-3 bg-white/20 px-4 py-1 rounded-lg text-sm flex items-center justify-center gap-1 mx-auto">
+                  <Edit2 size={14} /> Edit Profile
+                </button>
+              </>
+            ) : (
+              <div className="mt-2 space-y-2">
+                <input type="text" value={formData.fullName} onChange={(e) => setFormData({...formData, fullName: e.target.value})} className="w-full p-2 rounded-lg text-stone-800 text-center" placeholder="Full Name" />
+                <div className="flex gap-2 justify-center">
+                  <button onClick={handleSave} className="bg-white text-emerald-700 px-4 py-1 rounded-lg flex items-center gap-1"><Save size={14} /> Save</button>
+                  <button onClick={() => setIsEditing(false)} className="bg-white/20 px-4 py-1 rounded-lg flex items-center gap-1"><X size={14} /> Cancel</button>
+                </div>
+              </div>
+            )}
           </div>
-        ))}
-      </div>
 
-      {/* Profile Info */}
-      <div className="bg-white rounded-xl shadow-md m-4 p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-800">
-            {translations?.profileInfo || 'Profile Information'}
-          </h2>
-          {!isEditing && (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="text-green-600 hover:text-green-700 font-medium"
-            >
-              ✏️ Edit
-            </button>
-          )}
+          <div className="p-5 space-y-4">
+            <div className="flex items-center gap-3 pb-3 border-b">
+              <Phone size={18} className="text-emerald-600" />
+              <div><p className="text-xs text-stone-400">Phone Number</p><p className="font-medium">{user?.phoneNumber || 'Not provided'}</p></div>
+            </div>
+            <div className="flex items-center gap-3 pb-3 border-b">
+              <MapPin size={18} className="text-emerald-600" />
+              <div><p className="text-xs text-stone-400">Location</p><p className="font-medium">{formData.district}, {formData.state}</p></div>
+            </div>
+            <div className="flex items-center gap-3 pb-3 border-b">
+              <Calendar size={18} className="text-emerald-600" />
+              <div><p className="text-xs text-stone-400">Member Since</p><p className="font-medium">{new Date(user?.createdAt || Date.now()).toLocaleDateString()}</p></div>
+            </div>
+          </div>
         </div>
 
-        {message && (
-          <div className={`p-3 rounded-lg mb-4 ${
-            message.includes('success') 
-              ? 'bg-green-100 text-green-700' 
-              : 'bg-red-100 text-red-700'
-          }`}>
-            {message}
+        {/* Stats */}
+        <h3 className="font-bold text-stone-800 mb-3">Statistics</h3>
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="bg-white rounded-xl p-4 text-center shadow-sm">
+            <Sprout size={24} className="text-emerald-600 mx-auto mb-2" />
+            <p className="text-2xl font-bold">{stats.cropsCount}</p>
+            <p className="text-xs text-stone-500">Crops Registered</p>
           </div>
-        )}
-
-        {isEditing ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name
-              </label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  required
-                />
-                <VoiceInputWithValidation
-                  onTranscript={(text) => handleVoiceInput('fullName', text)}
-                  fieldType="name"
-                  language={currentLanguage}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Bio
-              </label>
-              <textarea
-                name="bio"
-                value={formData.bio}
-                onChange={handleChange}
-                rows="3"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Tell us about yourself..."
-              />
-            </div>
-
-            {user?.role !== 'labourer' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Farm Size (acres)
-                </label>
-                <input
-                  type="text"
-                  name="farmSize"
-                  value={formData.farmSize}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="e.g., 5 acres"
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                State
-              </label>
-              <select
-                name="state"
-                value={formData.state}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-              >
-                <option value="">Select State</option>
-                <option value="Karnataka">Karnataka</option>
-                <option value="Maharashtra">Maharashtra</option>
-                <option value="Uttar Pradesh">Uttar Pradesh</option>
-                <option value="Punjab">Punjab</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                District
-              </label>
-              <input
-                type="text"
-                name="district"
-                value={formData.district}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                placeholder="Enter your district"
-              />
-            </div>
-
-            <div className="flex space-x-3 pt-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-              >
-                {loading ? 'Saving...' : 'Save Changes'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsEditing(false);
-                  setFormData({
-                    fullName: user.fullName,
-                    bio: user.bio,
-                    farmSize: user.farmSize,
-                    state: user.state,
-                    district: user.district
-                  });
-                }}
-                className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-gray-600">Name:</span>
-              <span className="font-medium">{user?.fullName}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-gray-600">Phone:</span>
-              <span className="font-medium">{user?.phoneNumber}</span>
-            </div>
-            {user?.bio && (
-              <div className="py-2 border-b">
-                <span className="text-gray-600 block mb-1">Bio:</span>
-                <p className="text-gray-800">{user?.bio}</p>
-              </div>
-            )}
-            {user?.farmSize && (
-              <div className="flex justify-between py-2 border-b">
-                <span className="text-gray-600">Farm Size:</span>
-                <span className="font-medium">{user?.farmSize}</span>
-              </div>
-            )}
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-gray-600">Location:</span>
-              <span className="font-medium">{user?.district}, {user?.state}</span>
-            </div>
-            <div className="flex justify-between py-2">
-              <span className="text-gray-600">Member Since:</span>
-              <span className="font-medium">
-                {new Date(user?.createdAt).toLocaleDateString()}
-              </span>
-            </div>
+          <div className="bg-white rounded-xl p-4 text-center shadow-sm">
+            <Briefcase size={24} className="text-emerald-600 mx-auto mb-2" />
+            <p className="text-2xl font-bold">{stats.jobsCount}</p>
+            <p className="text-xs text-stone-500">Jobs Posted</p>
           </div>
-        )}
+        </div>
+
+        {/* Logout Button */}
+        <button onClick={handleLogout} className="w-full bg-red-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2">
+          <LogOut size={18} /> Logout
+        </button>
       </div>
     </div>
   );

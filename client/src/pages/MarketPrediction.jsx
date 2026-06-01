@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, TrendingUp, DollarSign, Activity, Calculator, CheckCircle, X, Plus, FileText } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const MarketPrediction = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedCrop, setSelectedCrop] = useState(null);
   const [showProfitModal, setShowProfitModal] = useState(false);
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
@@ -21,11 +23,15 @@ const MarketPrediction = () => {
 
   // Load registered crops from localStorage
   useEffect(() => {
+    loadRegisteredCrops();
+  }, []);
+
+  const loadRegisteredCrops = () => {
     const saved = localStorage.getItem('registeredCrops');
     if (saved) {
       setRegisteredCrops(JSON.parse(saved));
     }
-  }, []);
+  };
 
   const marketData = [
     { 
@@ -121,23 +127,44 @@ const MarketPrediction = () => {
   };
 
   const handleRegisterCrop = (crop) => {
+    // Get farmer details
+    const farmerId = user?.id || user?._id || 'farmer_' + Date.now();
+    const farmerName = user?.fullName || user?.name || 'Farmer';
+    
     const newRegistration = {
       id: Date.now(),
       cropName: crop.name,
       cropId: crop.id,
+      farmerId: farmerId,
+      farmerName: farmerName,
+      district: user?.district || 'Mandya',
+      state: user?.state || 'Karnataka',
       currentPrice: crop.currentPrice,
       predictedPrice: crop.predictedPrice,
-      area: parseFloat(registrationData.area),
-      expectedYield: parseFloat(registrationData.expectedHarvest),
-      plantingDate: registrationData.plantingDate,
+      demand: crop.demand,
+      area: parseFloat(registrationData.area) || 1,
+      expectedYield: parseFloat(registrationData.expectedHarvest) || 50,
+      plantingDate: registrationData.plantingDate || new Date().toISOString(),
       registrationDate: new Date().toISOString(),
-      status: 'Active',
-      expectedProfit: (parseFloat(registrationData.area) * parseFloat(registrationData.expectedHarvest) * crop.currentPrice)
+      status: 'Registered',
+      expectedProfit: (parseFloat(registrationData.area) || 1) * (parseFloat(registrationData.expectedHarvest) || 50) * crop.currentPrice
     };
     
-    const updated = [...registeredCrops, newRegistration];
-    setRegisteredCrops(updated);
-    localStorage.setItem('registeredCrops', JSON.stringify(updated));
+    console.log('Registering crop:', newRegistration);
+    
+    // Get existing crops
+    const existingCrops = JSON.parse(localStorage.getItem('registeredCrops') || '[]');
+    existingCrops.push(newRegistration);
+    localStorage.setItem('registeredCrops', JSON.stringify(existingCrops));
+    
+    console.log('Total registered crops:', existingCrops.length);
+    
+    // Update state
+    setRegisteredCrops(existingCrops);
+    
+    // Trigger storage event
+    window.dispatchEvent(new Event('storage'));
+    
     setShowRegistrationModal(false);
     setRegistrationData({ area: '', expectedHarvest: '', plantingDate: '' });
     alert(`✅ ${crop.name} registered successfully!`);
@@ -187,7 +214,7 @@ const MarketPrediction = () => {
               Your Registered Crops ({registeredCrops.length})
             </h3>
             <button 
-              onClick={() => navigate('/my-registrations')}
+              onClick={() => navigate('/my-crops')}
               className="text-xs text-emerald-600 font-medium"
             >
               View All →
@@ -400,7 +427,7 @@ const MarketPrediction = () => {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Area (acres)</label>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Area (acres) *</label>
                   <input
                     type="number"
                     value={registrationData.area}
@@ -411,7 +438,7 @@ const MarketPrediction = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Expected Yield (quintals)</label>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Expected Yield (quintals) *</label>
                   <input
                     type="number"
                     value={registrationData.expectedHarvest}
@@ -428,7 +455,6 @@ const MarketPrediction = () => {
                     value={registrationData.plantingDate}
                     onChange={(e) => setRegistrationData({...registrationData, plantingDate: e.target.value})}
                     className="w-full p-3 border border-stone-200 rounded-xl"
-                    required
                   />
                 </div>
               </div>

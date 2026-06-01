@@ -1,74 +1,319 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { toast } from 'react-hot-toast';
-import NavigationMenu from '../components/NavigationMenu';
+import { ArrowLeft, Phone, MapPin, Star, CheckCircle, XCircle, Clock, UserPlus, Briefcase } from 'lucide-react';
 
 const LabourSupport = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const [search, setSearch] = useState('');
   const [labourers, setLabourers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [applied, setApplied] = useState({});
+  const [selectedLabour, setSelectedLabour] = useState(null);
+  const [applications, setApplications] = useState([]);
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [applyMessage, setApplyMessage] = useState('');
+  const [myJobs, setMyJobs] = useState([]);
+  const [activeTab, setActiveTab] = useState('available');
 
-  useEffect(() => { fetchLabourers(); }, []);
+  // Demo labourers
+  const demoLabourers = [
+    { id: 1, name: 'Ravi Kumar', phone: '9876543210', skills: 'Harvesting, Planting', district: 'Mandya', experience: '5 years', rating: 4.8, completedJobs: 45, wage: 350 },
+    { id: 2, name: 'Suresh Hegde', phone: '9876543211', skills: 'Pesticide Spray, Weeding', district: 'Hassan', experience: '3 years', rating: 4.5, completedJobs: 28, wage: 320 },
+    { id: 3, name: 'Lakshmi Bai', phone: '9876543212', skills: 'Vegetable Picking, Sorting', district: 'Mysore', experience: '4 years', rating: 4.9, completedJobs: 52, wage: 300 },
+    { id: 4, name: 'Krishna Reddy', phone: '9876543213', skills: 'Irrigation, Ploughing', district: 'Belgaum', experience: '6 years', rating: 4.7, completedJobs: 38, wage: 400 },
+    { id: 5, name: 'Gowthami', phone: '9876543214', skills: 'Planting, Weeding', district: 'Hubli', experience: '2 years', rating: 4.3, completedJobs: 15, wage: 280 }
+  ];
 
-  const fetchLabourers = async () => {
-    try {
-      const response = await fetch('http://localhost:5001/api/labour');
-      const data = await response.json();
-      if (data.success && data.labourers.length > 0) setLabourers(data.labourers);
-      else {
-        setLabourers([
-          { id: 1, name: 'Ramesh Kumar', skills: ['Harvesting', 'Ploughing'], location: '2 km', available: true, rating: 4.5, wage: 400, phone: '9876543210', experience: '5 years' },
-          { id: 2, name: 'Suresh Patil', skills: ['Irrigation', 'Pesticides'], location: '5 km', available: true, rating: 4.2, wage: 350, phone: '9876543211', experience: '3 years' },
-          { id: 3, name: 'Mahesh Sharma', skills: ['Ploughing', 'Sowing'], location: '3 km', available: false, rating: 4.0, wage: 400, phone: '9876543212', experience: '4 years' },
-          { id: 4, name: 'Ganesh Rao', skills: ['Harvesting', 'Loading'], location: '1 km', available: true, rating: 4.8, wage: 450, phone: '9876543213', experience: '7 years' },
-        ]);
-      }
-    } catch (error) {
-      setLabourers([
-        { id: 1, name: 'Ramesh Kumar', skills: ['Harvesting', 'Ploughing'], location: '2 km', available: true, rating: 4.5, wage: 400, phone: '9876543210', experience: '5 years' },
-        { id: 2, name: 'Suresh Patil', skills: ['Irrigation', 'Pesticides'], location: '5 km', available: true, rating: 4.2, wage: 350, phone: '9876543211', experience: '3 years' },
-        { id: 3, name: 'Mahesh Sharma', skills: ['Ploughing', 'Sowing'], location: '3 km', available: false, rating: 4.0, wage: 400, phone: '9876543212', experience: '4 years' },
-        { id: 4, name: 'Ganesh Rao', skills: ['Harvesting', 'Loading'], location: '1 km', available: true, rating: 4.8, wage: 450, phone: '9876543213', experience: '7 years' },
-      ]);
-    } finally { setLoading(false); }
+  useEffect(() => {
+    loadLabourers();
+    loadMyJobs();
+    loadApplications();
+  }, []);
+
+  const loadLabourers = () => {
+    const stored = localStorage.getItem('labourers');
+    if (stored) {
+      setLabourers(JSON.parse(stored));
+    } else {
+      setLabourers(demoLabourers);
+      localStorage.setItem('labourers', JSON.stringify(demoLabourers));
+    }
   };
 
-  const handleApply = (id) => { setApplied({ ...applied, [id]: true }); toast.success('Application sent to labourer! They will contact you soon.'); };
+  const loadMyJobs = () => {
+    const jobs = JSON.parse(localStorage.getItem('myPostedJobs') || '[]');
+    setMyJobs(jobs);
+  };
 
-  const filtered = labourers.filter(l => l.name.toLowerCase().includes(search.toLowerCase()) || l.skills.some(s => s.toLowerCase().includes(search.toLowerCase())));
+  const loadApplications = () => {
+    const apps = JSON.parse(localStorage.getItem('jobApplications') || '[]');
+    setApplications(apps);
+  };
+
+  const handleCall = (phoneNumber) => {
+    window.location.href = `tel:${phoneNumber}`;
+  };
+
+  const handleApply = (labourer, job) => {
+    setSelectedLabour(labourer);
+    setSelectedJob(job);
+    setShowApplyModal(true);
+  };
+
+  const submitApplication = () => {
+    const application = {
+      id: Date.now(),
+      jobId: selectedJob.id,
+      jobTitle: `${selectedJob.cropName} - ${selectedJob.workType}`,
+      labourerId: selectedLabour.id,
+      labourerName: selectedLabour.name,
+      labourerPhone: selectedLabour.phone,
+      labourerDistrict: selectedLabour.district,
+      message: applyMessage,
+      status: 'Pending',
+      appliedAt: new Date().toISOString()
+    };
+    
+    const existingApps = JSON.parse(localStorage.getItem('jobApplications') || '[]');
+    existingApps.push(application);
+    localStorage.setItem('jobApplications', JSON.stringify(existingApps));
+    
+    // Update job applicants
+    const jobs = JSON.parse(localStorage.getItem('jobs') || '[]');
+    const jobIndex = jobs.findIndex(j => j.id === selectedJob.id);
+    if (jobIndex !== -1) {
+      if (!jobs[jobIndex].applicants) jobs[jobIndex].applicants = [];
+      jobs[jobIndex].applicants.push(application);
+      localStorage.setItem('jobs', JSON.stringify(jobs));
+    }
+    
+    setShowApplyModal(false);
+    setApplyMessage('');
+    alert('Application submitted successfully!');
+    loadApplications();
+  };
+
+  const getStatusBadge = (status) => {
+    switch(status) {
+      case 'Accepted': return <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs flex items-center"><CheckCircle size={12} className="mr-1" />Accepted</span>;
+      case 'Rejected': return <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs flex items-center"><XCircle size={12} className="mr-1" />Rejected</span>;
+      default: return <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs flex items-center"><Clock size={12} className="mr-1" />Pending</span>;
+    }
+  };
+
+  const pendingApplications = applications.filter(app => app.status === 'Pending');
+  const acceptedApplications = applications.filter(app => app.status === 'Accepted');
+  const rejectedApplications = applications.filter(app => app.status === 'Rejected');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 pb-24">
-      <NavigationMenu />
-      <div className="bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg sticky top-0 z-20">
-        <div className="max-w-2xl mx-auto px-4 py-4"><div className="text-center"><h1 className="text-xl font-bold">Labour Connect</h1><p className="text-xs text-green-200">Find workers near you</p></div></div>
+    <div className="min-h-screen bg-stone-50 pb-24">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-emerald-700 to-emerald-600 text-white px-5 pt-12 pb-6">
+        <button onClick={() => navigate('/dashboard')} className="flex items-center space-x-2 mb-4">
+          <ArrowLeft size={20} />
+          <span>Back</span>
+        </button>
+        <h1 className="text-2xl font-bold">Labour Support</h1>
+        <p className="text-emerald-100 text-sm">Find & manage workers for your farm</p>
       </div>
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <input type="text" placeholder="🔍 Search labourers by name or skill..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-green-500 outline-none mb-4" />
-        
-        {/* Only Post a Job button - removed duplicate "Post Labour Requirement" */}
-        <div className="mb-6">
-          <Link to="/post-job">
-            <button className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors">
-              📢 Post a Job (Hire Workers)
-            </button>
-          </Link>
-        </div>
 
-        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-3 mb-4"><div className="flex justify-between items-center"><span className="text-sm font-semibold text-blue-800">📊 Available Today</span><span className="text-2xl font-bold text-blue-600">{labourers.filter(l => l.available).length}</span></div></div>
-        
-        {loading ? <div className="text-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div></div> : (
-          <div className="space-y-4">{filtered.map((labour) => (
-            <div key={labour.id} className="bg-white rounded-2xl shadow-md p-4 border border-gray-100">
-              <div className="flex justify-between items-start"><div><div className="flex items-center"><span className="text-2xl mr-2">👨‍🌾</span><span className="font-bold text-gray-800 text-lg">{labour.name}</span></div><p className="text-sm text-gray-600 mt-1">{labour.skills.join(', ')}</p><p className="text-xs text-gray-400 mt-1">📍 {labour.location} away • ⭐ {labour.rating} • 💰 ₹{labour.wage}/day</p><p className="text-xs text-blue-500 mt-1">📞 {labour.phone}</p></div><div>{labour.available ? <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">Available</span> : <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold">Busy</span>}</div></div>
-              {labour.available && <div className="mt-3 flex gap-2"><button onClick={() => handleApply(labour.id)} disabled={applied[labour.id]} className="flex-1 bg-green-600 text-white py-2 rounded-xl text-sm font-medium hover:bg-green-700 disabled:bg-gray-400">{applied[labour.id] ? '✓ Requested' : '📞 Request Worker'}</button><a href={`tel:${labour.phone}`} className="flex-1 border-2 border-green-600 text-green-600 py-2 rounded-xl text-sm font-medium hover:bg-green-50 transition-colors text-center">📞 Call Now</a></div>}
-            </div>
-          ))}</div>)}
-        {filtered.length === 0 && <div className="text-center py-12"><p className="text-gray-500">No labourers found matching "{search}"</p></div>}
+      {/* Tabs */}
+      <div className="flex border-b bg-white px-5">
+        <button
+          onClick={() => setActiveTab('available')}
+          className={`py-3 px-4 font-medium text-sm transition ${activeTab === 'available' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-stone-500'}`}
+        >
+          <UserPlus size={16} className="inline mr-1" />
+          Available Workers
+        </button>
+        <button
+          onClick={() => setActiveTab('applications')}
+          className={`py-3 px-4 font-medium text-sm transition ${activeTab === 'applications' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-stone-500'}`}
+        >
+          <Briefcase size={16} className="inline mr-1" />
+          Applications ({pendingApplications.length})
+        </button>
       </div>
+
+      {activeTab === 'available' ? (
+        // Available Labourers List
+        <div className="p-5 space-y-4">
+          <div className="bg-emerald-50 rounded-xl p-3 mb-2">
+            <p className="text-sm text-emerald-800">👥 {labourers.length} workers available near you</p>
+          </div>
+          
+          {labourers.map(labourer => (
+            <div key={labourer.id} className="bg-white rounded-xl shadow-sm border border-stone-100 overflow-hidden">
+              <div className="p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="font-bold text-lg text-stone-800">{labourer.name}</h3>
+                    <div className="flex items-center text-sm text-stone-500 mt-1">
+                      <MapPin size={14} className="mr-1" />
+                      {labourer.district}
+                    </div>
+                  </div>
+                  <div className="flex items-center bg-emerald-50 px-2 py-1 rounded-lg">
+                    <Star size={14} className="text-yellow-500 mr-1" />
+                    <span className="text-sm font-semibold">{labourer.rating}</span>
+                  </div>
+                </div>
+                
+                <div className="space-y-2 mb-4">
+                  <div className="flex flex-wrap gap-2">
+                    {labourer.skills.split(',').map((skill, i) => (
+                      <span key={i} className="bg-stone-100 text-stone-600 text-xs px-2 py-1 rounded-full">{skill.trim()}</span>
+                    ))}
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-stone-500">Experience: {labourer.experience}</span>
+                    <span className="text-emerald-700 font-semibold">₹{labourer.wage}/day</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-stone-500">Completed Jobs: {labourer.completedJobs}</span>
+                    <span className="text-stone-500">📞 {labourer.phone}</span>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleCall(labourer.phone)}
+                    className="flex-1 bg-emerald-600 text-white py-2 rounded-lg text-sm font-semibold flex items-center justify-center"
+                  >
+                    <Phone size={16} className="mr-2" />
+                    Call
+                  </button>
+                  <button
+                    onClick={() => {
+                      const job = myJobs.find(j => j.status === 'Open');
+                      if (job) {
+                        handleApply(labourer, job);
+                      } else {
+                        alert('Please post a job first!');
+                        navigate('/post-job');
+                      }
+                    }}
+                    className="flex-1 border-2 border-emerald-600 text-emerald-700 py-2 rounded-lg text-sm font-semibold"
+                  >
+                    Hire
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        // Applications List
+        <div className="p-5 space-y-4">
+          {applications.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">📋</div>
+              <p className="text-stone-500">No applications yet</p>
+              <p className="text-xs text-stone-400 mt-1">When workers apply, you'll see them here</p>
+            </div>
+          ) : (
+            <>
+              {/* Pending Applications */}
+              {pendingApplications.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-stone-700 mb-2">Pending ({pendingApplications.length})</h3>
+                  {pendingApplications.map(app => (
+                    <div key={app.id} className="bg-yellow-50 rounded-xl p-4 mb-3 border border-yellow-200">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-semibold">{app.labourerName}</p>
+                          <p className="text-sm text-stone-600">{app.jobTitle}</p>
+                          <p className="text-xs text-stone-500 mt-1">{app.labourerDistrict}</p>
+                          {app.message && <p className="text-xs text-stone-600 mt-2 italic">"{app.message}"</p>}
+                        </div>
+                        {getStatusBadge(app.status)}
+                      </div>
+                      <div className="flex gap-2 mt-3">
+                        <button
+                          onClick={() => {
+                            const updated = applications.map(a => 
+                              a.id === app.id ? { ...a, status: 'Accepted' } : a
+                            );
+                            localStorage.setItem('jobApplications', JSON.stringify(updated));
+                            setApplications(updated);
+                            alert(`Accepted ${app.labourerName} for the job!`);
+                          }}
+                          className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          onClick={() => {
+                            const updated = applications.map(a => 
+                              a.id === app.id ? { ...a, status: 'Rejected' } : a
+                            );
+                            localStorage.setItem('jobApplications', JSON.stringify(updated));
+                            setApplications(updated);
+                            alert(`Rejected ${app.labourerName}'s application`);
+                          }}
+                          className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Accepted Applications */}
+              {acceptedApplications.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-stone-700 mb-2">Accepted ({acceptedApplications.length})</h3>
+                  {acceptedApplications.map(app => (
+                    <div key={app.id} className="bg-green-50 rounded-xl p-4 mb-3 border border-green-200">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-semibold">{app.labourerName}</p>
+                          <p className="text-sm text-stone-600">{app.jobTitle}</p>
+                          <button onClick={() => handleCall(app.labourerPhone)} className="mt-2 text-emerald-600 text-sm flex items-center">
+                            <Phone size={14} className="mr-1" /> Call {app.labourerPhone}
+                          </button>
+                        </div>
+                        {getStatusBadge(app.status)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Apply Modal */}
+      {showApplyModal && selectedLabour && selectedJob && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full">
+            <div className="p-4 border-b">
+              <h2 className="text-xl font-bold">Hire {selectedLabour.name}</h2>
+            </div>
+            <div className="p-5">
+              <div className="bg-emerald-50 p-3 rounded-xl mb-4">
+                <p className="text-sm text-stone-600">Job: {selectedJob.cropName} - {selectedJob.workType}</p>
+                <p className="text-sm text-stone-600">Wage: ₹{selectedJob.wagePerDay}/day</p>
+                <p className="text-sm text-stone-600">Location: {selectedJob.location}</p>
+              </div>
+              <textarea
+                placeholder="Message to worker (optional)"
+                value={applyMessage}
+                onChange={(e) => setApplyMessage(e.target.value)}
+                rows="3"
+                className="w-full p-3 border rounded-xl mb-4"
+              />
+              <div className="flex gap-2">
+                <button onClick={() => setShowApplyModal(false)} className="flex-1 py-2 border rounded-lg">Cancel</button>
+                <button onClick={submitApplication} className="flex-1 bg-emerald-600 text-white py-2 rounded-lg">Send Request</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
